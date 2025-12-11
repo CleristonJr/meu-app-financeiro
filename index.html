@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#030109">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <title>Financeiro Pro</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <style>
+        /* --- ESTILO CYBERPUNK APP --- */
+        [data-bs-theme="dark"] {
+            --bg-body: radial-gradient(#12045a , #050116 50%, #030109);
+            --bg-card: #1e1e1e;
+            --border-color: #333;
+            --card-shadow: 0 10px 30px rgba(0,0,0,0.7), 0 4px 10px rgba(0,0,0,0.5);
+            --text-main: #e0e0e0;
+            --input-bg: #2c2c2c;
+        }
+
+        body { 
+            background: var(--bg-body); 
+            background-attachment: fixed;
+            color: var(--text-main); 
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            padding-bottom: 80px; /* Espaço para rolar no celular */
+        }
+
+        .card { 
+            background-color: var(--bg-card); 
+            border: 1px solid var(--border-color); 
+            box-shadow: var(--card-shadow);
+            margin-bottom: 20px;
+            border-radius: 15px;
+        }
+
+        /* Botão Flutuante de Config/Logout */
+        .config-btn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 1050;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-control {
+            background-color: var(--input-bg);
+            border-color: var(--border-color);
+            color: var(--text-main);
+            padding: 12px; /* Maior para toque */
+        }
+        .form-control:focus {
+            background-color: var(--input-bg);
+            color: #fff;
+            border-color: #5c6bc0;
+            box-shadow: none;
+        }
+
+        /* Login Screen Overlay */
+        #loginScreen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #030109;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        /* Gráfico */
+        canvas { max-height: 250px; }
+
+        /* Texto data pago */
+        .texto-data-pago { color: #198754; font-size: 0.8rem; font-weight: bold; display: block; }
+
+        @media (max-width: 768px) {
+            h4 { font-size: 1.5rem; margin-top: 20px; }
+            .btn { padding: 12px; font-size: 1rem; } /* Botões fáceis de clicar */
+        }
+    </style>
+</head>
+<body>
+
+<div id="loginScreen">
+    <h2 class="text-white mb-4">🔐 Acesso Seguro</h2>
+    <div class="card p-4 w-100" style="max-width: 400px;">
+        <p class="text-muted small">Cole seu Token do GitHub abaixo. Ele será salvo apenas no seu celular.</p>
+        <input type="password" id="inputToken" class="form-control mb-3" placeholder="ghp_xxxxxxxxxxxx...">
+        <button onclick="salvarToken()" class="btn btn-primary w-100 fw-bold">ENTRAR</button>
+    </div>
+</div>
+
+<button onclick="fazerLogout()" class="config-btn" title="Sair / Trocar Token">
+    <i class="bi bi-box-arrow-right"></i>
+</button>
+
+<div class="container py-3" style="max-width: 800px;">
+
+    <h4 class="text-center mb-4 fw-bold text-white">💰 Financeiro App</h4>
+
+    <div class="card p-3">
+        <div class="text-center mb-2 fw-bold small text-muted">FLUXO DO MÊS</div>
+        <div style="height: 220px;">
+            <canvas id="graficoDias"></canvas>
+        </div>
+    </div>
+    
+    <ul class="nav nav-pills nav-fill mb-3" id="pills-tab" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active fw-bold" data-bs-toggle="pill" data-bs-target="#tab-pagar">📅 A Pagar</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#tab-pagos">✅ Histórico</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#tab-add">➕ Novo</button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        
+        <div class="tab-pane fade show active" id="tab-pagar">
+            <div class="card p-2 border-danger border-opacity-25" style="border-width: 1px;">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-sm mb-0 text-white">
+                        <tbody id="tabelaPendentes"></tbody>
+                    </table>
+                </div>
+                <p id="msgVazio" class="text-center text-muted mt-3 small" style="display:none;">Tudo pago! 🎉</p>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-pagos">
+            <div class="card p-2 border-success border-opacity-25">
+                 <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0 text-white">
+                        <tbody id="tabelaPagas"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-add">
+            <div class="card p-3">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="small text-muted fw-bold">Nome</label>
+                        <input type="text" id="novoNome" class="form-control" placeholder="Ex: Internet">
+                    </div>
+                    <div class="col-6">
+                        <label class="small text-muted fw-bold">Dia</label>
+                        <input type="number" id="novoDia" class="form-control" placeholder="10">
+                    </div>
+                    <div class="col-6">
+                        <label class="small text-muted fw-bold">Valor</label>
+                        <input type="tel" id="novoValor" class="form-control" placeholder="R$ 0,00">
+                    </div>
+                    <div class="col-12">
+                         <label class="small text-muted fw-bold">Obs</label>
+                        <input type="text" id="novaObs" class="form-control" placeholder="Opcional">
+                    </div>
+                    <div class="col-12 mt-3">
+                        <button onclick="adicionarConta()" class="btn btn-primary w-100 fw-bold shadow-sm py-3">SALVAR CONTA</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div> <div class="d-grid gap-2 mt-4">
+        <button onclick="salvarNoGithub()" id="btnSalvar" class="btn btn-success btn-lg fw-bold shadow py-3">
+            💾 SINCRONIZAR COM GITHUB
+        </button>
+    </div>
+
+</div>
+
+<div class="modal fade" id="modalEdicao" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background:#222;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold text-white">✏️ Editar</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editIndex"> 
+                <div class="mb-3"><label class="small text-muted">Nome</label><input type="text" id="editNome" class="form-control"></div>
+                <div class="row mb-3">
+                    <div class="col-6"><label class="small text-muted">Dia</label><input type="number" id="editDia" class="form-control"></div>
+                    <div class="col-6"><label class="small text-muted">Valor</label><input type="text" id="editValor" class="form-control"></div>
+                </div>
+                <div class="mb-2"><label class="small text-muted">Obs</label><input type="text" id="editObs" class="form-control"></div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-primary w-100 fw-bold" onclick="salvarEdicao()">Atualizar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- CONFIGURAÇÃO ---
+    const USUARIO = "CleristonJr";
+    const REPOSITORIO = "ContasAPagar";
+    // TOKEN REMOVIDO DAQUI POR SEGURANÇA
+    // --------------------
+
+    const API_URL = `https://api.github.com/repos/${USUARIO}/${REPOSITORIO}/contents/contas.json`;
+    let dadosAtuais = [];
+    let shaArquivo = "";
+    let modalEdicaoBS;
+    let meuGrafico = null;
+    let userToken = "";
+
+    window.onload = function() {
+        modalEdicaoBS = new bootstrap.Modal(document.getElementById('modalEdicao'));
+        verificarLogin();
+    };
+
+    // --- SISTEMA DE LOGIN ---
+    function verificarLogin() {
+        const tokenSalvo = localStorage.getItem('github_token_financeiro');
+        if (tokenSalvo) {
+            userToken = tokenSalvo;
+            document.getElementById('loginScreen').style.display = 'none';
+            carregarDados();
+        } else {
+            document.getElementById('loginScreen').style.display = 'flex';
+        }
+    }
+
+    function salvarToken() {
+        const input = document.getElementById('inputToken').value.trim();
+        if (input.startsWith('ghp_')) {
+            localStorage.setItem('github_token_financeiro', input);
+            verificarLogin();
+        } else {
+            alert("Token inválido! Deve começar com 'ghp_'");
+        }
+    }
+
+    function fazerLogout() {
+        if(confirm("Deseja sair e remover o Token deste dispositivo?")) {
+            localStorage.removeItem('github_token_financeiro');
+            location.reload();
+        }
+    }
+
+    // --- DADOS E GRÁFICOS ---
+    function textoParaFloat(texto) {
+        let limpo = texto.replace('R$', '').replaceAll('.', '').replace(',', '.').trim();
+        return parseFloat(limpo) || 0;
+    }
+
+    function atualizarGrafico() {
+        const resumoPorDia = {};
+        dadosAtuais.forEach(conta => {
+            const dia = conta.dia;
+            const valor = textoParaFloat(conta.valor);
+            if (!resumoPorDia[dia]) resumoPorDia[dia] = { total: 0, pago: 0 };
+            resumoPorDia[dia].total += valor;
+            if (conta.pago) resumoPorDia[dia].pago += valor;
+        });
+
+        const dias = Object.keys(resumoPorDia).sort((a, b) => parseInt(a) - parseInt(b));
+        const labels = dias.map(d => `${d}`);
+        const vlrPagos = dias.map(d => resumoPorDia[d].pago.toFixed(2));
+        const vlrResto = dias.map(d => (resumoPorDia[d].total - resumoPorDia[d].pago).toFixed(2));
+
+        const ctx = document.getElementById('graficoDias').getContext('2d');
+        if (meuGrafico) meuGrafico.destroy();
+
+        Chart.defaults.color = '#bbb';
+        Chart.defaults.borderColor = '#444';
+
+        meuGrafico = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Pago', data: vlrPagos, backgroundColor: '#22c55e', borderRadius: 4 },
+                    { label: 'Falta', data: vlrResto, backgroundColor: '#ef4444', borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: true, grid: { display: false } },
+                    y: { stacked: true, display: false } // Remove eixo Y para limpar visual mobile
+                },
+                plugins: { legend: { display: false } } // Remove legenda para ganhar espaço
+            }
+        });
+    }
+
+    async function carregarDados() {
+        try {
+            const urlTime = `${API_URL}?t=${new Date().getTime()}`;
+            const resp = await fetch(urlTime, { headers: { 'Authorization': `token ${userToken}` } });
+            
+            if(resp.status === 401) {
+                alert("Token expirado ou inválido. Faça login novamente.");
+                fazerLogout();
+                return;
+            }
+
+            const json = await resp.json();
+            const conteudo = decodeURIComponent(escape(window.atob(json.content)));
+            shaArquivo = json.sha;
+            dadosAtuais = JSON.parse(conteudo);
+            renderizarTudo();
+        } catch (erro) {
+            console.error(erro);
+            alert("Erro de conexão.");
+        }
+    }
+
+    function renderizarTudo() {
+        dadosAtuais.sort((a, b) => a.dia - b.dia);
+        
+        const pendentes = document.getElementById('tabelaPendentes');
+        const pagas = document.getElementById('tabelaPagas');
+        pendentes.innerHTML = "";
+        pagas.innerHTML = "";
+        let temPendencia = false;
+
+        dadosAtuais.forEach((c, i) => {
+            if (!c.pago) {
+                temPendencia = true;
+                pendentes.innerHTML += `
+                    <tr>
+                        <td width="15%" class="fw-bold fs-5 text-center">${c.dia}</td>
+                        <td>
+                            <div class="fw-bold">${c.nome}</div>
+                            <div class="small text-warning">${c.valor}</div>
+                            ${c.obs ? `<div class="small text-muted" style="font-size:0.7em">${c.obs}</div>` : ''}
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-info me-1" onclick="abrirEdicao(${i})"><i class="bi bi-pencil-fill"></i></button>
+                            <button class="btn btn-sm btn-success" onclick="alternarStatus(${i})"><i class="bi bi-check-lg"></i></button>
+                        </td>
+                    </tr>`;
+            } else {
+                pagas.innerHTML += `
+                    <tr class="riscado" style="opacity:0.6">
+                        <td width="15%" class="text-center">${c.dia}</td>
+                        <td>
+                            <div>${c.nome}</div>
+                            <small>${c.valor}</small>
+                        </td>
+                        <td class="text-end">
+                            <span class="texto-data-pago mb-1">${c.data_pagamento || 'Hoje'}</span>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="alternarStatus(${i})"><i class="bi bi-arrow-counterclockwise"></i></button>
+                        </td>
+                    </tr>`;
+            }
+        });
+        document.getElementById('msgVazio').style.display = temPendencia ? 'none' : 'block';
+        atualizarGrafico();
+    }
+
+    // --- FUNÇÕES DE AÇÃO ---
+    function adicionarConta() {
+        const nome = document.getElementById('novoNome').value;
+        const dia = parseInt(document.getElementById('novoDia').value);
+        let valor = document.getElementById('novoValor').value;
+        const obs = document.getElementById('novaObs').value;
+
+        if (!nome || !dia || !valor) return alert("Preencha os dados!");
+        valor = "R$ " + valor.replace('R$', '').trim();
+
+        dadosAtuais.push({ nome, dia, valor, obs, pago: false });
+        renderizarTudo();
+        
+        // Limpar e focar
+        document.getElementById('novoNome').value = "";
+        document.getElementById('novoValor').value = "";
+        document.getElementById('novaObs').value = "";
+        alert("Conta adicionada à lista! Lembre de salvar.");
+        
+        // Volta para aba de contas
+        const triggerEl = document.querySelector('button[data-bs-target="#tab-pagar"]');
+        bootstrap.Tab.getInstance(triggerEl).show();
+    }
+
+    function alternarStatus(i) {
+        dadosAtuais[i].pago = !dadosAtuais[i].pago;
+        if (dadosAtuais[i].pago) dadosAtuais[i].data_pagamento = new Date().toLocaleDateString('pt-BR');
+        else delete dadosAtuais[i].data_pagamento;
+        renderizarTudo();
+    }
+
+    function abrirEdicao(i) {
+        const c = dadosAtuais[i];
+        document.getElementById('editIndex').value = i;
+        document.getElementById('editNome').value = c.nome;
+        document.getElementById('editDia').value = c.dia;
+        document.getElementById('editValor').value = c.valor;
+        document.getElementById('editObs').value = c.obs;
+        modalEdicaoBS.show();
+    }
+
+    function salvarEdicao() {
+        const i = document.getElementById('editIndex').value;
+        let val = document.getElementById('editValor').value;
+        val = "R$ " + val.replace('R$', '').trim();
+
+        dadosAtuais[i].nome = document.getElementById('editNome').value;
+        dadosAtuais[i].dia = parseInt(document.getElementById('editDia').value);
+        dadosAtuais[i].valor = val;
+        dadosAtuais[i].obs = document.getElementById('editObs').value;
+        modalEdicaoBS.hide();
+        renderizarTudo();
+    }
+
+    async function salvarNoGithub() {
+        const btn = document.getElementById('btnSalvar');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sincronizando...';
+
+        try {
+            const jsonStr = JSON.stringify(dadosAtuais, null, 2);
+            const contentBase64 = window.btoa(unescape(encodeURIComponent(jsonStr)));
+            const body = { message: "App Mobile Update", content: contentBase64, sha: shaArquivo };
+
+            const resp = await fetch(API_URL, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${userToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            if (resp.ok) {
+                alert("✅ Sincronizado com Sucesso!");
+                location.reload();
+            } else { throw new Error("Erro GitHub"); }
+        } catch (e) {
+            alert("Erro ao salvar. Verifique conexão.");
+            btn.disabled = false;
+            btn.innerText = "💾 TENTAR NOVAMENTE";
+        }
+    }
+</script>
+</body>
+</html>
