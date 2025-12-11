@@ -17,6 +17,7 @@
     <style>
         /* --- ESTILO CYBERPUNK APP --- */
         [data-bs-theme="dark"] {
+            /* SEU GRADIENTE PERSONALIZADO */
             --bg-body: radial-gradient(#12045a , #050116 50%, #030109);
             --bg-card: #1e1e1e;
             --border-color: #333;
@@ -31,7 +32,7 @@
             color: var(--text-main); 
             font-family: 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
-            padding-bottom: 80px; /* Espaço para rolar no celular */
+            padding-bottom: 80px;
         }
 
         .card { 
@@ -64,7 +65,7 @@
             background-color: var(--input-bg);
             border-color: var(--border-color);
             color: var(--text-main);
-            padding: 12px; /* Maior para toque */
+            padding: 12px;
         }
         .form-control:focus {
             background-color: var(--input-bg);
@@ -86,15 +87,13 @@
             padding: 20px;
         }
 
-        /* Gráfico */
         canvas { max-height: 250px; }
-
-        /* Texto data pago */
         .texto-data-pago { color: #198754; font-size: 0.8rem; font-weight: bold; display: block; }
 
         @media (max-width: 768px) {
             h4 { font-size: 1.5rem; margin-top: 20px; }
-            .btn { padding: 12px; font-size: 1rem; } /* Botões fáceis de clicar */
+            /* Ajuste para caber 3 botões na mesma linha no celular */
+            .btn-action-group .btn { padding: 6px 10px; margin-left: 2px; }
         }
     </style>
 </head>
@@ -109,7 +108,7 @@
     </div>
 </div>
 
-<button onclick="fazerLogout()" class="config-btn" title="Sair / Trocar Token">
+<button onclick="fazerLogout()" class="config-btn" title="Sair">
     <i class="bi bi-box-arrow-right"></i>
 </button>
 
@@ -220,7 +219,6 @@
     // --- CONFIGURAÇÃO ---
     const USUARIO = "CleristonJr";
     const REPOSITORIO = "ContasAPagar";
-    // TOKEN REMOVIDO DAQUI POR SEGURANÇA
     // --------------------
 
     const API_URL = `https://api.github.com/repos/${USUARIO}/${REPOSITORIO}/contents/contas.json`;
@@ -235,7 +233,6 @@
         verificarLogin();
     };
 
-    // --- SISTEMA DE LOGIN ---
     function verificarLogin() {
         const tokenSalvo = localStorage.getItem('github_token_financeiro');
         if (tokenSalvo) {
@@ -264,7 +261,6 @@
         }
     }
 
-    // --- DADOS E GRÁFICOS ---
     function textoParaFloat(texto) {
         let limpo = texto.replace('R$', '').replaceAll('.', '').replace(',', '.').trim();
         return parseFloat(limpo) || 0;
@@ -305,9 +301,9 @@
                 maintainAspectRatio: false,
                 scales: {
                     x: { stacked: true, grid: { display: false } },
-                    y: { stacked: true, display: false } // Remove eixo Y para limpar visual mobile
+                    y: { stacked: true, display: false } 
                 },
-                plugins: { legend: { display: false } } // Remove legenda para ganhar espaço
+                plugins: { legend: { display: false } } 
             }
         });
     }
@@ -354,9 +350,10 @@
                             <div class="small text-warning">${c.valor}</div>
                             ${c.obs ? `<div class="small text-muted" style="font-size:0.7em">${c.obs}</div>` : ''}
                         </td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-info me-1" onclick="abrirEdicao(${i})"><i class="bi bi-pencil-fill"></i></button>
+                        <td class="text-end btn-action-group" style="min-width: 120px;">
+                            <button class="btn btn-sm btn-outline-info" onclick="abrirEdicao(${i})"><i class="bi bi-pencil-fill"></i></button>
                             <button class="btn btn-sm btn-success" onclick="alternarStatus(${i})"><i class="bi bi-check-lg"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="removerConta(${i})"><i class="bi bi-trash-fill"></i></button>
                         </td>
                     </tr>`;
             } else {
@@ -367,9 +364,10 @@
                             <div>${c.nome}</div>
                             <small>${c.valor}</small>
                         </td>
-                        <td class="text-end">
+                        <td class="text-end btn-action-group" style="min-width: 100px;">
                             <span class="texto-data-pago mb-1">${c.data_pagamento || 'Hoje'}</span>
                             <button class="btn btn-sm btn-outline-secondary" onclick="alternarStatus(${i})"><i class="bi bi-arrow-counterclockwise"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="removerConta(${i})"><i class="bi bi-trash-fill"></i></button>
                         </td>
                     </tr>`;
             }
@@ -378,7 +376,6 @@
         atualizarGrafico();
     }
 
-    // --- FUNÇÕES DE AÇÃO ---
     function adicionarConta() {
         const nome = document.getElementById('novoNome').value;
         const dia = parseInt(document.getElementById('novoDia').value);
@@ -391,15 +388,20 @@
         dadosAtuais.push({ nome, dia, valor, obs, pago: false });
         renderizarTudo();
         
-        // Limpar e focar
         document.getElementById('novoNome').value = "";
         document.getElementById('novoValor').value = "";
         document.getElementById('novaObs').value = "";
-        alert("Conta adicionada à lista! Lembre de salvar.");
+        alert("Adicionado! Salve para confirmar.");
         
-        // Volta para aba de contas
         const triggerEl = document.querySelector('button[data-bs-target="#tab-pagar"]');
         bootstrap.Tab.getInstance(triggerEl).show();
+    }
+
+    function removerConta(i) {
+        if(confirm("Tem certeza que deseja excluir esta conta?")) {
+            dadosAtuais.splice(i, 1);
+            renderizarTudo();
+        }
     }
 
     function alternarStatus(i) {
@@ -460,4 +462,5 @@
     }
 </script>
 </body>
-</html>
+        </html>
+        
