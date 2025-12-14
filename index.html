@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -168,7 +169,7 @@
         <div class="row align-items-center">
             <div class="col-md-8">
                 <div class="text-center text-md-start mb-2 fs-5 fw-bold text-secondary">📊 Fluxo de Despesas 3D</div>
-                <div id="graficoDias" style="height: 250px; width: 100%;"></div>
+                <div id="graficoDias" style="height: 300px; width: 100%;"></div>
             </div>
             <div class="col-md-4 text-center border-start border-secondary border-opacity-25 mt-3 mt-md-0">
                 <h6 class="text-muted text-uppercase fw-bold ls-1">Saldo Final</h6>
@@ -462,71 +463,73 @@
         atualizarGrafico();
     }
 
-    // --- GRÁFICO ECHARTS 3D ---
+    // --- GRÁFICO ECHARTS 3D (ESTILO DA FOTO) ---
     function atualizarGrafico() {
         const dom = document.getElementById('graficoDias');
-        // Define o tema do ECharts baseado no atributo HTML
         const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-        const themeName = isDark ? 'dark' : null; // 'dark' é nativo do ECharts
-
-        // Se já existe, destrói para recriar com tema correto
+        
+        // Se já existe, destrói para recriar
         if(meuGrafico) meuGrafico.dispose();
 
         // Inicia ECharts
-        meuGrafico = echarts.init(dom, themeName, { renderer: 'canvas' });
+        meuGrafico = echarts.init(dom, isDark ? 'dark' : null);
 
-        // Prepara dados
+        // Prepara dados: Soma total de despesas por dia
         const resumo = {};
         dadosAtuais.filter(d => d.tipo !== 'ganho').forEach(d => {
             const val = strToFloat(d.valor);
-            if(!resumo[d.dia]) resumo[d.dia] = { total: 0, pago: 0 };
-            resumo[d.dia].total += val;
-            if(d.pago) resumo[d.dia].pago += val;
+            if(!resumo[d.dia]) resumo[d.dia] = 0;
+            resumo[d.dia] += val;
         });
         const dias = Object.keys(resumo).sort((a,b)=>a-b);
-        const dataPagos = dias.map(d => resumo[d].pago);
-        const dataFalta = dias.map(d => resumo[d].total - resumo[d].pago);
-
-        // Cores com Gradiente para efeito 3D
-        const colorPago = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#22c55e' }, // Verde Claro
-            { offset: 1, color: '#14532d' }  // Verde Escuro
-        ]);
-        const colorFalta = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#ef4444' }, // Vermelho Claro
-            { offset: 1, color: '#7f1d1d' }  // Vermelho Escuro
-        ]);
+        // Cria o dataset no formato [Dia, Valor]
+        const dataSet = dias.map(d => ['Dia ' + d, resumo[d]]);
 
         const option = {
             backgroundColor: 'transparent',
-            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-            grid: { top: 30, bottom: 30, left: 40, right: 10, containLabel: true },
-            xAxis: { 
-                type: 'category', 
-                data: dias.map(d => 'Dia ' + d),
-                axisTick: { alignWithLabel: true }
+            tooltip: { trigger: 'item' },
+            // Configuração 3D
+            grid3D: {
+                boxWidth: 200,
+                boxDepth: 80,
+                viewControl: {
+                    // Posição da câmera para parecer a foto
+                    alpha: 20,
+                    beta: 30,
+                    distance: 250,
+                    panMouseButton: 'left',
+                    rotateMouseButton: 'right'
+                },
+                light: {
+                    main: { intensity: 1.2, shadow: true },
+                    ambient: { intensity: 0.3 }
+                }
             },
-            yAxis: { type: 'value' },
+            xAxis3D: { type: 'category', name: '' },
+            yAxis3D: { type: 'value', name: '' },
+            zAxis3D: { type: 'value', name: '' },
             series: [
                 {
-                    name: 'Pago',
-                    type: 'bar',
-                    stack: 'total',
-                    barWidth: '50%',
-                    data: dataPagos,
-                    itemStyle: { 
-                        color: colorPago, 
-                        borderRadius: [0, 0, 4, 4] // Borda arredondada embaixo
-                    }
-                },
-                {
-                    name: 'Falta',
-                    type: 'bar',
-                    stack: 'total',
-                    data: dataFalta,
-                    itemStyle: { 
-                        color: colorFalta,
-                        borderRadius: [4, 4, 0, 0] // Borda arredondada em cima
+                    type: 'bar3D',
+                    data: dataSet,
+                    shading: 'lambert', // Sombreamento realista
+                    label: {
+                        show: true,
+                        position: 'top',
+                        textStyle: {
+                            color: isDark ? '#fff' : '#333',
+                            fontSize: 14,
+                            fontWeight: 'bold'
+                        },
+                        // Formata o rótulo para dinheiro
+                        formatter: function(params) {
+                            return 'R$ ' + params.value[1].toFixed(0);
+                        }
+                    },
+                    itemStyle: {
+                        // Cor verde vibrante como na foto
+                        color: '#82e016',
+                        opacity: 0.9
                     }
                 }
             ]
