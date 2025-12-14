@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financeiro Cyberpunk Pro</title>
+    <title>Financeiro Cyberpunk 3D</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
     <style>
@@ -18,10 +20,7 @@
             --card-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 4px 10px rgba(0,0,0,0.6);
             --text-main: #e0e0e0;
             --input-bg: #2c2c2c;
-            --chart-color: #bbb;
-            --chart-grid: #444;
             --tab-active-bg: #2c2c2c;
-            --tab-border: #444;
         }
 
         [data-bs-theme="light"] {
@@ -31,10 +30,7 @@
             --card-shadow: 0 10px 30px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05);
             --text-main: #212529;
             --input-bg: #fff;
-            --chart-color: #666;
-            --chart-grid: #ddd;
             --tab-active-bg: #fff;
-            --tab-border: #dee2e6;
         }
 
         body { 
@@ -46,12 +42,11 @@
             transition: all 0.3s ease;
         }
 
-        /* TÍTULO PRINCIPAL ADAPTÁVEL */
+        /* TÍTULO ADAPTÁVEL */
         .titulo-principal {
-            color: #fff; /* Padrão Dark (Branco) */
+            color: #fff;
             transition: color 0.3s;
         }
-        /* Quando estiver no modo Light, muda para cinza (igual ao text-secondary) */
         [data-bs-theme="light"] .titulo-principal {
             color: var(--bs-secondary-color) !important;
         }
@@ -100,15 +95,11 @@
             box-shadow: var(--card-shadow); font-size: 1.2rem;
         }
 
-        /* ABAS ESTILIZADAS */
+        /* ABAS */
         .nav-tabs { border-bottom: 1px solid var(--border-color); }
         .nav-link { 
-            color: #888; 
-            font-weight: bold; 
-            border: none; 
-            margin-right: 5px;
-            border-radius: 8px 8px 0 0;
-            transition: all 0.2s;
+            color: #888; font-weight: bold; border: none; margin-right: 5px;
+            border-radius: 8px 8px 0 0; transition: all 0.2s;
         }
         .nav-link:hover { color: #aaa; background: rgba(255,255,255,0.05); }
         .nav-link.active {
@@ -121,12 +112,12 @@
         #tab-ganhos.active { color: #198754 !important; }
         #tab-historico.active { color: #0d6efd !important; }
 
-        /* Custom Colors */
+        /* COLORS */
         .riscado { text-decoration: line-through; color: #777 !important; }
         .texto-positivo { color: #00ff88; font-weight: bold; }
         .texto-negativo { color: #ff4d4d; font-weight: bold; }
         
-        /* Saldo Display */
+        /* SALDO */
         .saldo-box {
             font-size: 1.5rem;
             font-weight: 800;
@@ -176,10 +167,8 @@
     <div class="card p-3 border-0">
         <div class="row align-items-center">
             <div class="col-md-8">
-                <div class="text-center text-md-start mb-2 fs-5 fw-bold text-secondary">📊 Fluxo de Despesas</div>
-                <div style="height: 200px;">
-                    <canvas id="graficoDias"></canvas>
-                </div>
+                <div class="text-center text-md-start mb-2 fs-5 fw-bold text-secondary">📊 Fluxo de Despesas 3D</div>
+                <div id="graficoDias" style="height: 250px; width: 100%;"></div>
             </div>
             <div class="col-md-4 text-center border-start border-secondary border-opacity-25 mt-3 mt-md-0">
                 <h6 class="text-muted text-uppercase fw-bold ls-1">Saldo Final</h6>
@@ -192,24 +181,17 @@
     
     <ul class="nav nav-tabs mb-3" id="minhasAbas" role="tablist">
         <li class="nav-item flex-fill text-center" role="presentation">
-            <button class="nav-link w-100 active" id="tab-pendentes" data-bs-toggle="tab" data-bs-target="#conteudo-pendentes" type="button" role="tab">
-                📅 A PAGAR
-            </button>
+            <button class="nav-link w-100 active" id="tab-pendentes" data-bs-toggle="tab" data-bs-target="#conteudo-pendentes" type="button" role="tab">📅 A PAGAR</button>
         </li>
         <li class="nav-item flex-fill text-center" role="presentation">
-            <button class="nav-link w-100" id="tab-ganhos" data-bs-toggle="tab" data-bs-target="#conteudo-ganhos" type="button" role="tab">
-                🤑 ENTRADAS
-            </button>
+            <button class="nav-link w-100" id="tab-ganhos" data-bs-toggle="tab" data-bs-target="#conteudo-ganhos" type="button" role="tab">🤑 ENTRADAS</button>
         </li>
         <li class="nav-item flex-fill text-center" role="presentation">
-            <button class="nav-link w-100" id="tab-historico" data-bs-toggle="tab" data-bs-target="#conteudo-historico" type="button" role="tab">
-                ✅ HISTÓRICO
-            </button>
+            <button class="nav-link w-100" id="tab-historico" data-bs-toggle="tab" data-bs-target="#conteudo-historico" type="button" role="tab">✅ HISTÓRICO</button>
         </li>
     </ul>
 
     <div class="tab-content" id="minhasAbasContent">
-        
         <div class="tab-pane fade show active" id="conteudo-pendentes" role="tabpanel">
             <div class="card p-3 border-danger border-opacity-25" style="border-width: 1px;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -224,7 +206,6 @@
                 <p id="msgVazioPendentes" class="text-center text-muted mt-2 small" style="display:none;">Tudo pago! 🎉</p>
             </div>
         </div>
-
         <div class="tab-pane fade" id="conteudo-ganhos" role="tabpanel">
             <div class="card p-3 border-success border-opacity-25" style="border-width: 1px;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -239,7 +220,6 @@
                 <p id="msgVazioGanhos" class="text-center text-muted mt-2 small" style="display:none;">Sem registros.</p>
             </div>
         </div>
-
         <div class="tab-pane fade" id="conteudo-historico" role="tabpanel">
             <div class="card p-3 opacity-75">
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -274,7 +254,6 @@
                     <div class="col-6"><label class="small text-muted">Valor</label><input type="text" id="novoValor" class="form-control" placeholder="R$ 0,00"></div>
                 </div>
                 <div class="mb-3"><label class="small text-muted">Observação</label><input type="text" id="novaObs" class="form-control"></div>
-                
                 <div class="form-check form-switch p-2 border rounded bg-opacity-10 bg-secondary">
                     <input class="form-check-input" type="checkbox" id="novoPago" style="margin-left: 0.5em; cursor: pointer;">
                     <label class="form-check-label fw-bold ms-2" for="novoPago">Já está pago?</label>
@@ -332,7 +311,8 @@
     const API_URL = `https://api.github.com/repos/${USUARIO}/${REPOSITORIO}/contents/contas.json`;
     let dadosAtuais = [];
     let shaArquivo = "";
-    let modalEdicaoBS, modalGanhoBS, modalDespesaBS, meuGrafico;
+    let modalEdicaoBS, modalGanhoBS, modalDespesaBS;
+    let meuGrafico = null; // Instância do ECharts
 
     // --- LOGIN ---
     function verificarLogin() {
@@ -345,7 +325,6 @@
             document.getElementById('painelPrincipal').style.display = 'none';
         }
     }
-
     function fazerLogin() {
         const input = document.getElementById('inputToken').value.trim();
         if(!input.startsWith('ghp_')) return alert("Token inválido! Deve começar com 'ghp_'");
@@ -353,11 +332,11 @@
         TOKEN = input;
         verificarLogin();
     }
-
     function fazerLogout() {
         if(confirm("Sair?")) { localStorage.removeItem('github_token'); location.reload(); }
     }
 
+    // --- INIT ---
     window.onload = function() {
         const tema = localStorage.getItem('tema') || 'dark';
         document.documentElement.setAttribute('data-bs-theme', tema);
@@ -366,12 +345,17 @@
         modalGanhoBS = new bootstrap.Modal(document.getElementById('modalGanho'));
         modalDespesaBS = new bootstrap.Modal(document.getElementById('modalDespesa'));
         
-        // --- AUTO-PREENCHER DATA ATUAL ---
+        // Auto-preencher data
         const diaHoje = new Date().getDate();
         document.getElementById('novoDia').value = diaHoje;
         document.getElementById('ganhoDia').value = diaHoje;
 
         verificarLogin();
+        
+        // Ajustar gráfico ao redimensionar tela
+        window.addEventListener('resize', function() {
+            if(meuGrafico) meuGrafico.resize();
+        });
     };
 
     function alternarTema() {
@@ -379,10 +363,11 @@
         const novo = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
         html.setAttribute('data-bs-theme', novo);
         localStorage.setItem('tema', novo);
+        // Recarrega o gráfico com novo tema
         if(meuGrafico) atualizarGrafico();
     }
 
-    // --- DADOS ---
+    // --- HELPERS ---
     function fmtDinheiro(v) { return "R$ " + v.replace('R$', '').trim(); }
     function strToFloat(v) { return parseFloat(v.replace('R$','').replaceAll('.','').replace(',','.')) || 0; }
 
@@ -453,7 +438,7 @@
         document.getElementById('totalPagar').innerText = "R$ " + sPagar.toFixed(2).replace('.',',');
         document.getElementById('totalHistorico').innerText = "R$ " + sHistorico.toFixed(2).replace('.',',');
         
-        // --- SALDO ---
+        // SALDO (Entradas - Total Despesas)
         const totalDespesas = sPagar + sHistorico;
         const saldo = sGanhos - totalDespesas;
         const divSaldo = document.getElementById('displaySaldo');
@@ -467,7 +452,7 @@
             msgSaldo.className = "small mt-2 fw-bold text-success";
         } else {
             divSaldo.className = "saldo-box saldo-vermelho";
-            msgSaldo.innerText = "Atenção! Você está gastando mais do que ganha. 🚨";
+            msgSaldo.innerText = "Atenção! Gasto maior que ganho. 🚨";
             msgSaldo.className = "small mt-2 fw-bold text-danger";
         }
 
@@ -477,10 +462,20 @@
         atualizarGrafico();
     }
 
+    // --- GRÁFICO ECHARTS 3D ---
     function atualizarGrafico() {
-        const dark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-        const corTxt = dark ? '#bbb' : '#333';
-        
+        const dom = document.getElementById('graficoDias');
+        // Define o tema do ECharts baseado no atributo HTML
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        const themeName = isDark ? 'dark' : null; // 'dark' é nativo do ECharts
+
+        // Se já existe, destrói para recriar com tema correto
+        if(meuGrafico) meuGrafico.dispose();
+
+        // Inicia ECharts
+        meuGrafico = echarts.init(dom, themeName, { renderer: 'canvas' });
+
+        // Prepara dados
         const resumo = {};
         dadosAtuais.filter(d => d.tipo !== 'ganho').forEach(d => {
             const val = strToFloat(d.valor);
@@ -488,32 +483,62 @@
             resumo[d.dia].total += val;
             if(d.pago) resumo[d.dia].pago += val;
         });
-
         const dias = Object.keys(resumo).sort((a,b)=>a-b);
-        const ctx = document.getElementById('graficoDias').getContext('2d');
-        if(meuGrafico) meuGrafico.destroy();
-        
-        Chart.defaults.color = corTxt;
-        Chart.defaults.borderColor = dark ? '#444' : '#ddd';
+        const dataPagos = dias.map(d => resumo[d].pago);
+        const dataFalta = dias.map(d => resumo[d].total - resumo[d].pago);
 
-        meuGrafico = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: dias.map(d => `Dia ${d}`),
-                datasets: [
-                    { label: 'Pago', data: dias.map(d=>resumo[d].pago), backgroundColor: '#198754', stack:'0' },
-                    { label: 'Falta', data: dias.map(d=>resumo[d].total-resumo[d].pago), backgroundColor: '#dc3545', stack:'0' }
-                ]
+        // Cores com Gradiente para efeito 3D
+        const colorPago = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#22c55e' }, // Verde Claro
+            { offset: 1, color: '#14532d' }  // Verde Escuro
+        ]);
+        const colorFalta = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#ef4444' }, // Vermelho Claro
+            { offset: 1, color: '#7f1d1d' }  // Vermelho Escuro
+        ]);
+
+        const option = {
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+            grid: { top: 30, bottom: 30, left: 40, right: 10, containLabel: true },
+            xAxis: { 
+                type: 'category', 
+                data: dias.map(d => 'Dia ' + d),
+                axisTick: { alignWithLabel: true }
             },
-            options: { responsive: true, maintainAspectRatio: false, scales: { x:{grid:{display:false}}, y:{beginAtZero:true} } }
-        });
+            yAxis: { type: 'value' },
+            series: [
+                {
+                    name: 'Pago',
+                    type: 'bar',
+                    stack: 'total',
+                    barWidth: '50%',
+                    data: dataPagos,
+                    itemStyle: { 
+                        color: colorPago, 
+                        borderRadius: [0, 0, 4, 4] // Borda arredondada embaixo
+                    }
+                },
+                {
+                    name: 'Falta',
+                    type: 'bar',
+                    stack: 'total',
+                    data: dataFalta,
+                    itemStyle: { 
+                        color: colorFalta,
+                        borderRadius: [4, 4, 0, 0] // Borda arredondada em cima
+                    }
+                }
+            ]
+        };
+
+        meuGrafico.setOption(option);
     }
 
-    // --- AÇÕES ---
+    // --- CRUD ---
     function adicionarDespesa() {
         const n = document.getElementById('novoNome').value, d = document.getElementById('novoDia').value, v = document.getElementById('novoValor').value, o = document.getElementById('novaObs').value;
         const jaPago = document.getElementById('novoPago').checked;
-        
         if(!n || !d || !v) return alert("Preencha tudo!");
         
         const novaConta = { nome:n, dia:parseInt(d), valor:fmtDinheiro(v), obs:o, pago: jaPago, tipo:'despesa' };
@@ -523,7 +548,7 @@
         renderizarTudo(); limpaForm('novo');
         document.getElementById('novoPago').checked = false;
         document.getElementById('novoDia').value = new Date().getDate();
-        modalDespesaBS.hide(); // Fecha o modal
+        modalDespesaBS.hide();
     }
 
     function adicionarGanho() {
@@ -531,42 +556,4 @@
         if(!n || !d || !v) return alert("Preencha tudo!");
         dadosAtuais.push({ nome:n, dia:parseInt(d), valor:fmtDinheiro(v), obs:o, tipo:'ganho' });
         renderizarTudo(); limpaForm('ganho'); modalGanhoBS.hide();
-        document.getElementById('ganhoDia').value = new Date().getDate();
-    }
-
-    function limpaForm(p) { document.getElementById(p+'Nome').value=""; document.getElementById(p+'Valor').value=""; document.getElementById(p+'Obs').value=""; }
-    function removerItem(i) { if(confirm("Apagar?")) { dadosAtuais.splice(i,1); renderizarTudo(); } }
-    
-    function alternarStatus(i) {
-        dadosAtuais[i].pago = !dadosAtuais[i].pago;
-        dadosAtuais[i].data_pagamento = dadosAtuais[i].pago ? new Date().toLocaleDateString('pt-BR') : undefined;
-        renderizarTudo();
-    }
-
-    function abrirEdicao(i) {
-        const c = dadosAtuais[i];
-        document.getElementById('editIndex').value=i; document.getElementById('editNome').value=c.nome;
-        document.getElementById('editDia').value=c.dia; document.getElementById('editValor').value=c.valor;
-        document.getElementById('editObs').value=c.obs||''; modalEdicaoBS.show();
-    }
-
-    function salvarEdicao() {
-        const i = document.getElementById('editIndex').value;
-        dadosAtuais[i].nome = document.getElementById('editNome').value;
-        dadosAtuais[i].dia = parseInt(document.getElementById('editDia').value);
-        dadosAtuais[i].valor = fmtDinheiro(document.getElementById('editValor').value);
-        dadosAtuais[i].obs = document.getElementById('editObs').value;
-        modalEdicaoBS.hide(); renderizarTudo();
-    }
-
-    async function salvarNoGithub() {
-        const btn = document.getElementById('btnSalvar'); btn.disabled=true; btn.innerText="Salvando...";
-        try {
-            const body = { message: "Update via App", content: btoa(unescape(encodeURIComponent(JSON.stringify(dadosAtuais,null,2)))), sha: shaArquivo };
-            const r = await fetch(API_URL, { method:'PUT', headers:{'Authorization':`token ${TOKEN}`, 'Content-Type':'application/json'}, body:JSON.stringify(body) });
-            if(r.ok) { alert("✅ Sucesso!"); location.reload(); } else throw new Error();
-        } catch { alert("Erro ao salvar! Verifique conexão/token."); btn.disabled=false; btn.innerText="💾 TENTAR NOVAMENTE"; }
-    }
-</script>
-</body>
-</html>
+        document.getElementById('ganhoDia').value = new Date().
