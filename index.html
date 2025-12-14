@@ -155,7 +155,7 @@
                 <h5 class="mb-3 text-center text-primary fw-bold">➕ Nova Despesa</h5>
                 <div class="row g-2">
                     <div class="col-12"><label class="small text-muted">Nome</label><input type="text" id="novoNome" class="form-control"></div>
-                    <div class="col-6"><label class="small text-muted">Dia</label><input type="number" id="novoDia" class="form-control" placeholder="10"></div>
+                    <div class="col-6"><label class="small text-muted">Dia</label><input type="number" id="novoDia" class="form-control"></div>
                     <div class="col-6"><label class="small text-muted">Valor</label><input type="text" id="novoValor" class="form-control" placeholder="0,00"></div>
                     <div class="col-12"><label class="small text-muted">Obs</label><input type="text" id="novaObs" class="form-control"></div>
                     
@@ -291,8 +291,16 @@
     window.onload = function() {
         const tema = localStorage.getItem('tema') || 'dark';
         document.documentElement.setAttribute('data-bs-theme', tema);
+        
         modalEdicaoBS = new bootstrap.Modal(document.getElementById('modalEdicao'));
         modalGanhoBS = new bootstrap.Modal(document.getElementById('modalGanho'));
+        
+        // --- AUTO-PREENCHER DATA ATUAL ---
+        const diaHoje = new Date().getDate();
+        document.getElementById('novoDia').value = diaHoje;
+        document.getElementById('ganhoDia').value = diaHoje;
+        // ---------------------------------
+
         verificarLogin();
     };
 
@@ -328,7 +336,7 @@
         
         tGanhos.innerHTML = ""; tPendentes.innerHTML = ""; tPagas.innerHTML = "";
         
-        let sGanhos = 0, sPagar = 0, sHistorico = 0; // Soma dos valores
+        let sGanhos = 0, sPagar = 0, sHistorico = 0; 
         let cGanhos = 0, cPend = 0;
 
         dadosAtuais.forEach((c, i) => {
@@ -347,7 +355,6 @@
                         </td>
                     </tr>`;
             } else {
-                // É Despesa
                 if(!c.pago) {
                     sPagar += val; cPend++;
                     tPendentes.innerHTML += `
@@ -372,12 +379,11 @@
             }
         });
 
-        // Atualiza Badges e Totais
         document.getElementById('totalGanhos').innerText = "R$ " + sGanhos.toFixed(2).replace('.',',');
         document.getElementById('totalPagar').innerText = "R$ " + sPagar.toFixed(2).replace('.',',');
         document.getElementById('totalHistorico').innerText = "R$ " + sHistorico.toFixed(2).replace('.',',');
         
-        // --- CÁLCULO DO SALDO (Entradas - Total Despesas) ---
+        // --- SALDO ---
         const totalDespesas = sPagar + sHistorico;
         const saldo = sGanhos - totalDespesas;
         const divSaldo = document.getElementById('displaySaldo');
@@ -436,27 +442,18 @@
     // --- AÇÕES ---
     function adicionarDespesa() {
         const n = document.getElementById('novoNome').value, d = document.getElementById('novoDia').value, v = document.getElementById('novoValor').value, o = document.getElementById('novaObs').value;
-        // Verifica o Switch "Já Pago?"
         const jaPago = document.getElementById('novoPago').checked;
         
         if(!n || !d || !v) return alert("Preencha tudo!");
         
-        const novaConta = { 
-            nome:n, 
-            dia:parseInt(d), 
-            valor:fmtDinheiro(v), 
-            obs:o, 
-            pago: jaPago, // Define se já nasce pago
-            tipo:'despesa' 
-        };
-        
-        // Se já pago, adiciona a data de hoje
+        const novaConta = { nome:n, dia:parseInt(d), valor:fmtDinheiro(v), obs:o, pago: jaPago, tipo:'despesa' };
         if(jaPago) novaConta.data_pagamento = new Date().toLocaleDateString('pt-BR');
 
         dadosAtuais.push(novaConta);
         renderizarTudo(); limpaForm('novo');
-        // Reseta o switch
         document.getElementById('novoPago').checked = false;
+        // Reseta o dia para hoje novamente após limpar
+        document.getElementById('novoDia').value = new Date().getDate();
     }
 
     function adicionarGanho() {
@@ -464,6 +461,7 @@
         if(!n || !d || !v) return alert("Preencha tudo!");
         dadosAtuais.push({ nome:n, dia:parseInt(d), valor:fmtDinheiro(v), obs:o, tipo:'ganho' });
         renderizarTudo(); limpaForm('ganho'); modalGanhoBS.hide();
+        document.getElementById('ganhoDia').value = new Date().getDate();
     }
 
     function limpaForm(p) { document.getElementById(p+'Nome').value=""; document.getElementById(p+'Valor').value=""; document.getElementById(p+'Obs').value=""; }
