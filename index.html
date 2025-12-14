@@ -556,4 +556,42 @@
         if(!n || !d || !v) return alert("Preencha tudo!");
         dadosAtuais.push({ nome:n, dia:parseInt(d), valor:fmtDinheiro(v), obs:o, tipo:'ganho' });
         renderizarTudo(); limpaForm('ganho'); modalGanhoBS.hide();
-        document.getElementById('ganhoDia').value = new Date().
+        document.getElementById('ganhoDia').value = new Date().getDate();
+    }
+
+    function limpaForm(p) { document.getElementById(p+'Nome').value=""; document.getElementById(p+'Valor').value=""; document.getElementById(p+'Obs').value=""; }
+    function removerItem(i) { if(confirm("Apagar?")) { dadosAtuais.splice(i,1); renderizarTudo(); } }
+    
+    function alternarStatus(i) {
+        dadosAtuais[i].pago = !dadosAtuais[i].pago;
+        dadosAtuais[i].data_pagamento = dadosAtuais[i].pago ? new Date().toLocaleDateString('pt-BR') : undefined;
+        renderizarTudo();
+    }
+
+    function abrirEdicao(i) {
+        const c = dadosAtuais[i];
+        document.getElementById('editIndex').value=i; document.getElementById('editNome').value=c.nome;
+        document.getElementById('editDia').value=c.dia; document.getElementById('editValor').value=c.valor;
+        document.getElementById('editObs').value=c.obs||''; modalEdicaoBS.show();
+    }
+
+    function salvarEdicao() {
+        const i = document.getElementById('editIndex').value;
+        dadosAtuais[i].nome = document.getElementById('editNome').value;
+        dadosAtuais[i].dia = parseInt(document.getElementById('editDia').value);
+        dadosAtuais[i].valor = fmtDinheiro(document.getElementById('editValor').value);
+        dadosAtuais[i].obs = document.getElementById('editObs').value;
+        modalEdicaoBS.hide(); renderizarTudo();
+    }
+
+    async function salvarNoGithub() {
+        const btn = document.getElementById('btnSalvar'); btn.disabled=true; btn.innerText="Salvando...";
+        try {
+            const body = { message: "Update via App", content: btoa(unescape(encodeURIComponent(JSON.stringify(dadosAtuais,null,2)))), sha: shaArquivo };
+            const r = await fetch(API_URL, { method:'PUT', headers:{'Authorization':`token ${TOKEN}`, 'Content-Type':'application/json'}, body:JSON.stringify(body) });
+            if(r.ok) { alert("✅ Sucesso!"); location.reload(); } else throw new Error();
+        } catch { alert("Erro ao salvar! Verifique conexão/token."); btn.disabled=false; btn.innerText="💾 TENTAR NOVAMENTE"; }
+    }
+</script>
+</body>
+</html>
