@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financeiro Cyberpunk 3D</title>
+    <title>Financeiro Cyberpunk Pro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -113,7 +112,6 @@
         #tab-ganhos.active { color: #198754 !important; }
         #tab-historico.active { color: #0d6efd !important; }
 
-        /* COLORS */
         .riscado { text-decoration: line-through; color: #777 !important; }
         .texto-positivo { color: #00ff88; font-weight: bold; }
         .texto-negativo { color: #ff4d4d; font-weight: bold; }
@@ -168,8 +166,10 @@
     <div class="card p-3 border-0">
         <div class="row align-items-center">
             <div class="col-md-8">
-                <div class="text-center text-md-start mb-2 fs-5 fw-bold text-secondary">📊 Fluxo de Despesas 3D</div>
-                <div id="graficoDias" style="height: 300px; width: 100%;"></div>
+                <div class="text-center text-md-start mb-2 fs-5 fw-bold text-secondary">📊 Fluxo de Despesas</div>
+                <div style="height: 250px; width: 100%;">
+                    <canvas id="graficoDias"></canvas>
+                </div>
             </div>
             <div class="col-md-4 text-center border-start border-secondary border-opacity-25 mt-3 mt-md-0">
                 <h6 class="text-muted text-uppercase fw-bold ls-1">Saldo Final</h6>
@@ -313,7 +313,7 @@
     let dadosAtuais = [];
     let shaArquivo = "";
     let modalEdicaoBS, modalGanhoBS, modalDespesaBS;
-    let meuGrafico = null; // Instância do ECharts
+    let meuGrafico = null; 
 
     // --- LOGIN ---
     function verificarLogin() {
@@ -328,7 +328,7 @@
     }
     function fazerLogin() {
         const input = document.getElementById('inputToken').value.trim();
-        if(!input.startsWith('ghp_')) return alert("Token inválido! Deve começar com 'ghp_'");
+        if(!input.startsWith('ghp_')) return alert("Token inválido!");
         localStorage.setItem('github_token', input);
         TOKEN = input;
         verificarLogin();
@@ -346,17 +346,11 @@
         modalGanhoBS = new bootstrap.Modal(document.getElementById('modalGanho'));
         modalDespesaBS = new bootstrap.Modal(document.getElementById('modalDespesa'));
         
-        // Auto-preencher data
         const diaHoje = new Date().getDate();
         document.getElementById('novoDia').value = diaHoje;
         document.getElementById('ganhoDia').value = diaHoje;
 
         verificarLogin();
-        
-        // Ajustar gráfico ao redimensionar tela
-        window.addEventListener('resize', function() {
-            if(meuGrafico) meuGrafico.resize();
-        });
     };
 
     function alternarTema() {
@@ -364,11 +358,10 @@
         const novo = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
         html.setAttribute('data-bs-theme', novo);
         localStorage.setItem('tema', novo);
-        // Recarrega o gráfico com novo tema
         if(meuGrafico) atualizarGrafico();
     }
 
-    // --- HELPERS ---
+    // --- DADOS ---
     function fmtDinheiro(v) { return "R$ " + v.replace('R$', '').trim(); }
     function strToFloat(v) { return parseFloat(v.replace('R$','').replaceAll('.','').replace(',','.')) || 0; }
 
@@ -400,37 +393,14 @@
             
             if(c.tipo === 'ganho') {
                 sGanhos += val; cGanhos++;
-                tGanhos.innerHTML += `
-                    <tr>
-                        <td class="fw-bold">${c.dia}</td>
-                        <td>${c.nome}</td>
-                        <td class="texto-positivo">${c.valor}</td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-info btn-action" onclick="abrirEdicao(${i})"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger btn-action" onclick="removerItem(${i})"><i class="bi bi-trash"></i></button>
-                        </td>
-                    </tr>`;
+                tGanhos.innerHTML += `<tr><td class="fw-bold">${c.dia}</td><td>${c.nome}</td><td class="texto-positivo">${c.valor}</td><td class="text-end"><button class="btn btn-sm btn-outline-info btn-action" onclick="abrirEdicao(${i})"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger btn-action" onclick="removerItem(${i})"><i class="bi bi-trash"></i></button></td></tr>`;
             } else {
                 if(!c.pago) {
                     sPagar += val; cPend++;
-                    tPendentes.innerHTML += `
-                        <tr>
-                            <td class="fw-bold fs-5 text-white">${c.dia}</td>
-                            <td>${c.nome} <br><small class="text-muted">${c.obs||''}</small></td>
-                            <td class="texto-negativo">${c.valor}</td>
-                            <td class="text-end">
-                                <button class="btn btn-sm btn-outline-info btn-action" onclick="abrirEdicao(${i})"><i class="bi bi-pencil-fill"></i></button>
-                                <button class="btn btn-sm btn-success btn-action" onclick="alternarStatus(${i})"><i class="bi bi-check-lg"></i></button>
-                                <button class="btn btn-sm btn-outline-danger btn-action" onclick="removerItem(${i})"><i class="bi bi-trash-fill"></i></button>
-                            </td>
-                        </tr>`;
+                    tPendentes.innerHTML += `<tr><td class="fw-bold fs-5 text-white">${c.dia}</td><td>${c.nome} <br><small class="text-muted">${c.obs||''}</small></td><td class="texto-negativo">${c.valor}</td><td class="text-end"><button class="btn btn-sm btn-outline-info btn-action" onclick="abrirEdicao(${i})"><i class="bi bi-pencil-fill"></i></button><button class="btn btn-sm btn-success btn-action" onclick="alternarStatus(${i})"><i class="bi bi-check-lg"></i></button><button class="btn btn-sm btn-outline-danger btn-action" onclick="removerItem(${i})"><i class="bi bi-trash-fill"></i></button></td></tr>`;
                 } else {
                     sHistorico += val;
-                    tPagas.innerHTML += `
-                        <tr class="riscado">
-                            <td>${c.dia}</td><td>${c.nome}</td><td>${c.valor}</td>
-                            <td class="text-end"><button class="btn btn-sm btn-outline-secondary btn-action" onclick="alternarStatus(${i})"><i class="bi bi-arrow-counterclockwise"></i></button></td>
-                        </tr>`;
+                    tPagas.innerHTML += `<tr class="riscado"><td>${c.dia}</td><td>${c.nome}</td><td>${c.valor}</td><td class="text-end"><button class="btn btn-sm btn-outline-secondary btn-action" onclick="alternarStatus(${i})"><i class="bi bi-arrow-counterclockwise"></i></button></td></tr>`;
                 }
             }
         });
@@ -439,22 +409,18 @@
         document.getElementById('totalPagar').innerText = "R$ " + sPagar.toFixed(2).replace('.',',');
         document.getElementById('totalHistorico').innerText = "R$ " + sHistorico.toFixed(2).replace('.',',');
         
-        // SALDO (Entradas - Total Despesas)
-        const totalDespesas = sPagar + sHistorico;
-        const saldo = sGanhos - totalDespesas;
+        const saldo = sGanhos - (sPagar + sHistorico);
         const divSaldo = document.getElementById('displaySaldo');
-        const msgSaldo = document.getElementById('msgSaldo');
-        
         divSaldo.innerText = "R$ " + saldo.toFixed(2).replace('.',',');
         
         if(saldo >= 0) {
             divSaldo.className = "saldo-box saldo-verde";
-            msgSaldo.innerText = "Parabéns! Você está no azul. 🤑";
-            msgSaldo.className = "small mt-2 fw-bold text-success";
+            document.getElementById('msgSaldo').innerText = "Parabéns! Você está no azul. 🤑";
+            document.getElementById('msgSaldo').className = "small mt-2 fw-bold text-success";
         } else {
             divSaldo.className = "saldo-box saldo-vermelho";
-            msgSaldo.innerText = "Atenção! Gasto maior que ganho. 🚨";
-            msgSaldo.className = "small mt-2 fw-bold text-danger";
+            document.getElementById('msgSaldo').innerText = "Atenção! Gasto maior que ganho. 🚨";
+            document.getElementById('msgSaldo').className = "small mt-2 fw-bold text-danger";
         }
 
         document.getElementById('msgVazioGanhos').style.display = cGanhos ? 'none' : 'block';
@@ -463,129 +429,95 @@
         atualizarGrafico();
     }
 
-    // --- GRÁFICO ECHARTS 3D (ESTILO DA FOTO) ---
-    // --- GRÁFICO DE BARRAS CONVENCIONAL ---
-function atualizarGrafico() {
-    const dom = document.getElementById('graficoDias');
-    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    // --- GRÁFICO CHART.JS COM EFEITO DEGRADÊ (TRANSLÚCIDO) ---
+    function atualizarGrafico() {
+        const ctx = document.getElementById('graficoDias').getContext('2d');
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        
+        if(meuGrafico) meuGrafico.destroy();
 
-    // Se já existe, destrói para recriar
-    if (meuGrafico) meuGrafico.destroy();
+        // 1. Processar dados
+        const resumo = {};
+        dadosAtuais.filter(d => d.tipo !== 'ganho').forEach(d => {
+            const val = strToFloat(d.valor);
+            if(!resumo[d.dia]) resumo[d.dia] = { total: 0, pago: 0 };
+            resumo[d.dia].total += val;
+            if(d.pago) resumo[d.dia].pago += val;
+        });
+        const dias = Object.keys(resumo).sort((a,b)=>a-b);
+        const labels = dias.map(d => `Dia ${d}`);
+        const dataPagos = dias.map(d => resumo[d].pago);
+        const dataFalta = dias.map(d => resumo[d].total - resumo[d].pago);
 
-    // Prepara dados: Soma total de despesas por dia
-    const resumo = {};
-    dadosAtuais.filter(d => d.tipo !== 'ganho').forEach(d => {
-        const val = strToFloat(d.valor);
-        if (!resumo[d.dia]) resumo[d.dia] = 0;
-        resumo[d.dia] += val;
-    });
-    const dias = Object.keys(resumo).sort((a, b) => a - b);
-    // Cria o dataset no formato para Chart.js
-    const labels = dias.map(d => 'Dia ' + d);
-    const data = dias.map(d => resumo[d]);
+        // 2. Criar Gradientes "Neon/Vidro"
+        // Verde (Pago)
+        const gradPago = ctx.createLinearGradient(0, 0, 0, 300);
+        gradPago.addColorStop(0, 'rgba(34, 197, 94, 0.9)'); // Topo forte
+        gradPago.addColorStop(1, 'rgba(34, 197, 94, 0.1)'); // Base transparente
 
-    // Cria um gradiente para simular o efeito translúcido da imagem
-    const ctx = dom.getContext('2d');
-    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    // Cor de cima: azul translúcido brilhante
-    gradient.addColorStop(0, 'rgba(0, 255, 255, 0.6)');
-    // Cor de baixo: branco translúcido
-    gradient.addColorStop(1, 'rgba(255, 255, 255, 0.3)');
+        // Vermelho (Falta)
+        const gradFalta = ctx.createLinearGradient(0, 0, 0, 300);
+        gradFalta.addColorStop(0, 'rgba(239, 68, 68, 0.9)'); 
+        gradFalta.addColorStop(1, 'rgba(239, 68, 68, 0.1)');
 
-    // Configurações do gráfico Chart.js
-    meuGrafico = new Chart(dom, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Total de Despesas',
-                data: data,
-                backgroundColor: gradient,
-                borderColor: 'rgba(255, 255, 255, 0.7)', // Borda branca para o efeito de vidro
-                borderWidth: 2,
-                // Sombra para o efeito 3D
-                barPercentage: 0.7, // Largura das barras
-                categoryPercentage: 0.8
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false // Oculta a legenda
-                },
-                tooltip: {
-                    callbacks: {
-                        // Formata o valor para dinheiro no tooltip
-                        label: function(context) {
-                            return 'Total: R$ ' + context.parsed.y.toFixed(2);
-                        }
+        // 3. Configurar Chart.js
+        Chart.defaults.color = isDark ? '#bbb' : '#333';
+        Chart.defaults.borderColor = isDark ? '#444' : '#ddd';
+
+        meuGrafico = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Pago',
+                        data: dataPagos,
+                        backgroundColor: gradPago,
+                        borderColor: '#22c55e',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        barPercentage: 0.6,
+                        stack: 'Stack 0',
                     },
-                    bodyFont: {
-                        size: 14,
-                        weight: 'bold'
-                    },
-                    titleFont: {
-                        size: 16
-                    },
-                    padding: 10,
-                    cornerRadius: 8,
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)' // Fundo do tooltip escuro
-                }
-            },
-            scales: {
-                x: {
-                    grid: {
-                        display: false // Remove as linhas de grade verticais
-                    },
-                    ticks: {
-                        color: isDark ? '#fff' : '#333', // Cor dos rótulos do eixo X
-                        font: {
-                            size: 12,
-                            weight: 'bold'
-                        }
+                    {
+                        label: 'Falta',
+                        data: dataFalta,
+                        backgroundColor: gradFalta,
+                        borderColor: '#ef4444',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        barPercentage: 0.6,
+                        stack: 'Stack 0',
                     }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { grid: { display: false } }, // Remove grade vertical (visual mais limpo)
+                    y: { beginAtZero: true, border: { display: false } }
                 },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' // Cor das linhas de grade horizontais
-                    },
-                    ticks: {
-                        color: isDark ? '#fff' : '#333', // Cor dos rótulos do eixo Y
-                        font: {
-                            size: 12,
-                            weight: 'bold'
-                        },
-                        // Formata os rótulos do eixo Y para dinheiro
-                        callback: function(value) {
-                            return 'R$ ' + value.toFixed(0);
+                plugins: {
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        callbacks: {
+                            footer: (items) => {
+                                let total = 0;
+                                items.forEach((i) => total += i.parsed.y);
+                                return 'Total: R$ ' + total.toFixed(2).replace('.',',');
+                            }
                         }
-                    }
-                }
-            },
-            layout: {
-                padding: {
-                    top: 20,
-                    bottom: 10,
-                    left: 10,
-                    right: 10
-                }
-            },
-            // Adiciona uma sombra global nas barras para o efeito 3D
-            elements: {
-                bar: {
-                    borderSkipped: 'bottom',
-                    shadowOffsetX: 3,
-                    shadowOffsetY: 3,
-                    shadowBlur: 5,
-                    shadowColor: 'rgba(0, 0, 0, 0.3)'
+                    },
+                    legend: { labels: { usePointStyle: true } }
                 }
             }
-        }
-    });
-}
+        });
+    }
 
     // --- CRUD ---
     function adicionarDespesa() {
