@@ -12,7 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
     <style>
-        /* --- ESTILO VISUAL CYBERPUNK --- */
+        /* --- ESTILO GERAL --- */
         [data-bs-theme="dark"] {
             --bg-body: radial-gradient(#12045a , #050116 50%, #030109);
             --bg-card: #1e1e1e;
@@ -42,14 +42,9 @@
             transition: all 0.3s ease;
         }
 
-        /* TÍTULO ADAPTÁVEL */
-        .titulo-principal {
-            color: #fff;
-            transition: color 0.3s;
-        }
-        [data-bs-theme="light"] .titulo-principal {
-            color: var(--bs-secondary-color) !important;
-        }
+        /* TÍTULO PRINCIPAL ADAPTÁVEL */
+        .titulo-principal { color: #fff; transition: color 0.3s; }
+        [data-bs-theme="light"] .titulo-principal { color: var(--bs-secondary-color) !important; }
 
         /* LOGIN */
         #loginScreen {
@@ -79,21 +74,14 @@
             box-shadow: 0 0 0 0.25rem rgba(102, 16, 242, 0.25);
         }
 
-        .theme-toggle {
-            position: fixed; top: 20px; right: 20px; z-index: 1050;
-            border-radius: 50%; width: 50px; height: 50px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: var(--card-shadow); font-size: 1.5rem;
-            transition: transform 0.2s;
+        .theme-toggle, .btn-logout {
+            position: fixed; right: 20px; z-index: 1050;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: var(--card-shadow); transition: transform 0.2s;
         }
+        .theme-toggle { top: 20px; width: 50px; height: 50px; font-size: 1.5rem; }
+        .btn-logout { top: 80px; width: 40px; height: 40px; font-size: 1.2rem; }
         .theme-toggle:hover { transform: scale(1.1); }
-        
-        .btn-logout {
-            position: fixed; top: 80px; right: 20px; z-index: 1050;
-            border-radius: 50%; width: 40px; height: 40px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: var(--card-shadow); font-size: 1.2rem;
-        }
 
         /* ABAS */
         .nav-tabs { border-bottom: 1px solid var(--border-color); }
@@ -116,14 +104,26 @@
         .texto-positivo { color: #00ff88; font-weight: bold; }
         .texto-negativo { color: #ff4d4d; font-weight: bold; }
         
-        /* SALDO */
+        /* --- CORES DO SALDO (Ajuste Solicitado) --- */
         .saldo-box {
             font-size: 1.5rem;
             font-weight: 800;
             text-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
+        
+        /* Padrão (Dark Mode) - Cores Neon */
         .saldo-verde { color: #00ff88; }
         .saldo-vermelho { color: #ff4d4d; }
+
+        /* Modo Claro - Cores Escuras (Iguais à mensagem Bootstrap) */
+        [data-bs-theme="light"] .saldo-verde { 
+            color: #198754 !important; /* Verde Success Bootstrap */
+            text-shadow: none;
+        }
+        [data-bs-theme="light"] .saldo-vermelho { 
+            color: #dc3545 !important; /* Vermelho Danger Bootstrap */
+            text-shadow: none;
+        }
 
         @media (max-width: 768px) {
             .btn-action { padding: 4px 8px; }
@@ -413,14 +413,16 @@
         const divSaldo = document.getElementById('displaySaldo');
         divSaldo.innerText = "R$ " + saldo.toFixed(2).replace('.',',');
         
+        // Lógica de Cor do Saldo (Atualizada)
+        const msg = document.getElementById('msgSaldo');
         if(saldo >= 0) {
             divSaldo.className = "saldo-box saldo-verde";
-            document.getElementById('msgSaldo').innerText = "Parabéns! Você está no azul. 🤑";
-            document.getElementById('msgSaldo').className = "small mt-2 fw-bold text-success";
+            msg.innerText = "Parabéns! Você está no azul. 🤑";
+            msg.className = "small mt-2 fw-bold text-success";
         } else {
             divSaldo.className = "saldo-box saldo-vermelho";
-            document.getElementById('msgSaldo').innerText = "Atenção! Gasto maior que ganho. 🚨";
-            document.getElementById('msgSaldo').className = "small mt-2 fw-bold text-danger";
+            msg.innerText = "Atenção! Gasto maior que ganho. 🚨";
+            msg.className = "small mt-2 fw-bold text-danger";
         }
 
         document.getElementById('msgVazioGanhos').style.display = cGanhos ? 'none' : 'block';
@@ -429,57 +431,52 @@
         atualizarGrafico();
     }
 
-    // --- PLUGIN PERSONALIZADO PARA EFEITO 3D NO CHART.JS ---
+    // --- PLUGIN CHART.JS 3D ---
     const plugin3D = {
         id: 'custom3D',
         beforeDatasetsDraw(chart, args, options) {
             const { ctx } = chart;
-            const depthX = 15; // Profundidade horizontal
-            const depthY = 10; // Profundidade vertical
+            const depthX = 15; // Profundidade
+            const depthY = 10; 
 
             chart.data.datasets.forEach((dataset, i) => {
                 const meta = chart.getDatasetMeta(i);
                 meta.data.forEach((bar, index) => {
                     const { x, y, width, height, base } = bar;
-                    // Define cores translúcidas para as faces laterais
                     const sideColor = dataset.borderColor === '#22c55e' 
-                        ? 'rgba(34, 197, 94, 0.4)'  // Verde lateral
-                        : 'rgba(239, 68, 68, 0.4)'; // Vermelho lateral
+                        ? 'rgba(34, 197, 94, 0.4)'  
+                        : 'rgba(239, 68, 68, 0.4)'; 
 
                     ctx.fillStyle = sideColor;
-                    ctx.strokeStyle = dataset.borderColor; // Borda brilhante
+                    ctx.strokeStyle = dataset.borderColor;
                     ctx.lineWidth = 1;
                     
-                    // Face Superior
+                    // Topo
                     ctx.beginPath();
-                    ctx.moveTo(x - width / 2, y);
-                    ctx.lineTo(x + width / 2, y);
-                    ctx.lineTo(x + width / 2 + depthX, y - depthY);
-                    ctx.lineTo(x - width / 2 + depthX, y - depthY);
-                    ctx.closePath();
-                    ctx.fill(); ctx.stroke();
+                    ctx.moveTo(x - width/2, y);
+                    ctx.lineTo(x + width/2, y);
+                    ctx.lineTo(x + width/2 + depthX, y - depthY);
+                    ctx.lineTo(x - width/2 + depthX, y - depthY);
+                    ctx.closePath(); ctx.fill(); ctx.stroke();
 
-                    // Face Lateral Direita
+                    // Lateral
                     ctx.beginPath();
-                    ctx.moveTo(x + width / 2, y);
-                    ctx.lineTo(x + width / 2 + depthX, y - depthY);
-                    ctx.lineTo(x + width / 2 + depthX, base - depthY);
-                    ctx.lineTo(x + width / 2, base);
-                    ctx.closePath();
-                    ctx.fill(); ctx.stroke();
+                    ctx.moveTo(x + width/2, y);
+                    ctx.lineTo(x + width/2 + depthX, y - depthY);
+                    ctx.lineTo(x + width/2 + depthX, base - depthY);
+                    ctx.lineTo(x + width/2, base);
+                    ctx.closePath(); ctx.fill(); ctx.stroke();
                 });
             });
         }
     };
 
-    // --- FUNÇÃO DO GRÁFICO COM O PLUGIN 3D APLICADO ---
     function atualizarGrafico() {
         const ctx = document.getElementById('graficoDias').getContext('2d');
         const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
         
         if(meuGrafico) meuGrafico.destroy();
 
-        // Processar dados
         const resumo = {};
         dadosAtuais.filter(d => d.tipo !== 'ganho').forEach(d => {
             const val = strToFloat(d.valor);
@@ -492,16 +489,11 @@
         const dataPagos = dias.map(d => resumo[d].pago);
         const dataFalta = dias.map(d => resumo[d].total - resumo[d].pago);
 
-        // Criar Gradientes "Neon/Vidro" para a face frontal
-        // Verde (Pago)
+        // Degradês
         const gradPago = ctx.createLinearGradient(0, 0, 0, 300);
-        gradPago.addColorStop(0, 'rgba(34, 197, 94, 0.8)');
-        gradPago.addColorStop(1, 'rgba(34, 197, 94, 0.2)');
-
-        // Vermelho (Falta)
+        gradPago.addColorStop(0, 'rgba(34, 197, 94, 0.8)'); gradPago.addColorStop(1, 'rgba(34, 197, 94, 0.2)');
         const gradFalta = ctx.createLinearGradient(0, 0, 0, 300);
-        gradFalta.addColorStop(0, 'rgba(239, 68, 68, 0.8)'); 
-        gradFalta.addColorStop(1, 'rgba(239, 68, 68, 0.2)');
+        gradFalta.addColorStop(0, 'rgba(239, 68, 68, 0.8)'); gradFalta.addColorStop(1, 'rgba(239, 68, 68, 0.2)');
 
         Chart.defaults.color = isDark ? '#bbb' : '#333';
         Chart.defaults.borderColor = isDark ? '#444' : '#ddd';
@@ -511,47 +503,24 @@
             data: {
                 labels: labels,
                 datasets: [
-                    {
-                        label: 'Pago', data: dataPagos,
-                        backgroundColor: gradPago,
-                        borderColor: '#22c55e', // Cor da borda usada para identificar no plugin
-                        borderWidth: 1,
-                        barPercentage: 0.7, categoryPercentage: 0.8,
-                        stack: 'Stack 0',
-                    },
-                    {
-                        label: 'Falta', data: dataFalta,
-                        backgroundColor: gradFalta,
-                        borderColor: '#ef4444', // Cor da borda usada para identificar no plugin
-                        borderWidth: 1,
-                        barPercentage: 0.7, categoryPercentage: 0.8,
-                        stack: 'Stack 0',
-                    }
+                    { label: 'Pago', data: dataPagos, backgroundColor: gradPago, borderColor: '#22c55e', borderWidth: 1, barPercentage: 0.7, stack: '0' },
+                    { label: 'Falta', data: dataFalta, backgroundColor: gradFalta, borderColor: '#ef4444', borderWidth: 1, barPercentage: 0.7, stack: '0' }
                 ]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: { padding: { top: 20, right: 20 } }, // Espaço para o efeito 3D não cortar
-                scales: {
-                    x: { grid: { display: false } },
-                    y: { beginAtZero: true, border: { display: false } }
-                },
+                responsive: true, maintainAspectRatio: false,
+                layout: { padding: { top: 20, right: 20 } },
+                scales: { x: { grid: { display: false } }, y: { beginAtZero: true, border: { display: false } } },
                 plugins: {
                     tooltip: {
                         mode: 'index', intersect: false,
                         backgroundColor: 'rgba(0,0,0,0.8)', titleColor: '#fff', bodyColor: '#fff',
-                        callbacks: {
-                            footer: (items) => {
-                                let total = 0; items.forEach((i) => total += i.parsed.y);
-                                return 'Total: R$ ' + total.toFixed(2).replace('.',',');
-                            }
-                        }
+                        callbacks: { footer: (items) => { let total = 0; items.forEach((i) => total += i.parsed.y); return 'Total: R$ ' + total.toFixed(2).replace('.',','); } }
                     },
                     legend: { labels: { usePointStyle: true } }
                 }
             },
-            plugins: [plugin3D] // Adiciona o nosso plugin personalizado
+            plugins: [plugin3D]
         });
     }
 
@@ -560,58 +529,23 @@
         const n = document.getElementById('novoNome').value, d = document.getElementById('novoDia').value, v = document.getElementById('novoValor').value, o = document.getElementById('novaObs').value;
         const jaPago = document.getElementById('novoPago').checked;
         if(!n || !d || !v) return alert("Preencha tudo!");
-        
         const novaConta = { nome:n, dia:parseInt(d), valor:fmtDinheiro(v), obs:o, pago: jaPago, tipo:'despesa' };
         if(jaPago) novaConta.data_pagamento = new Date().toLocaleDateString('pt-BR');
-
-        dadosAtuais.push(novaConta);
-        renderizarTudo(); limpaForm('novo');
-        document.getElementById('novoPago').checked = false;
-        document.getElementById('novoDia').value = new Date().getDate();
-        modalDespesaBS.hide();
+        dadosAtuais.push(novaConta); renderizarTudo(); limpaForm('novo');
+        document.getElementById('novoPago').checked = false; document.getElementById('novoDia').value = new Date().getDate(); modalDespesaBS.hide();
     }
-
     function adicionarGanho() {
         const n = document.getElementById('ganhoNome').value, d = document.getElementById('ganhoDia').value, v = document.getElementById('ganhoValor').value, o = document.getElementById('ganhoObs').value;
         if(!n || !d || !v) return alert("Preencha tudo!");
         dadosAtuais.push({ nome:n, dia:parseInt(d), valor:fmtDinheiro(v), obs:o, tipo:'ganho' });
-        renderizarTudo(); limpaForm('ganho'); modalGanhoBS.hide();
-        document.getElementById('ganhoDia').value = new Date().getDate();
+        renderizarTudo(); limpaForm('ganho'); modalGanhoBS.hide(); document.getElementById('ganhoDia').value = new Date().getDate();
     }
-
     function limpaForm(p) { document.getElementById(p+'Nome').value=""; document.getElementById(p+'Valor').value=""; document.getElementById(p+'Obs').value=""; }
     function removerItem(i) { if(confirm("Apagar?")) { dadosAtuais.splice(i,1); renderizarTudo(); } }
-    
-    function alternarStatus(i) {
-        dadosAtuais[i].pago = !dadosAtuais[i].pago;
-        dadosAtuais[i].data_pagamento = dadosAtuais[i].pago ? new Date().toLocaleDateString('pt-BR') : undefined;
-        renderizarTudo();
-    }
-
-    function abrirEdicao(i) {
-        const c = dadosAtuais[i];
-        document.getElementById('editIndex').value=i; document.getElementById('editNome').value=c.nome;
-        document.getElementById('editDia').value=c.dia; document.getElementById('editValor').value=c.valor;
-        document.getElementById('editObs').value=c.obs||''; modalEdicaoBS.show();
-    }
-
-    function salvarEdicao() {
-        const i = document.getElementById('editIndex').value;
-        dadosAtuais[i].nome = document.getElementById('editNome').value;
-        dadosAtuais[i].dia = parseInt(document.getElementById('editDia').value);
-        dadosAtuais[i].valor = fmtDinheiro(document.getElementById('editValor').value);
-        dadosAtuais[i].obs = document.getElementById('editObs').value;
-        modalEdicaoBS.hide(); renderizarTudo();
-    }
-
-    async function salvarNoGithub() {
-        const btn = document.getElementById('btnSalvar'); btn.disabled=true; btn.innerText="Salvando...";
-        try {
-            const body = { message: "Update via App", content: btoa(unescape(encodeURIComponent(JSON.stringify(dadosAtuais,null,2)))), sha: shaArquivo };
-            const r = await fetch(API_URL, { method:'PUT', headers:{'Authorization':`token ${TOKEN}`, 'Content-Type':'application/json'}, body:JSON.stringify(body) });
-            if(r.ok) { alert("✅ Sucesso!"); location.reload(); } else throw new Error();
-        } catch { alert("Erro ao salvar! Verifique conexão/token."); btn.disabled=false; btn.innerText="💾 TENTAR NOVAMENTE"; }
-    }
+    function alternarStatus(i) { dadosAtuais[i].pago = !dadosAtuais[i].pago; dadosAtuais[i].data_pagamento = dadosAtuais[i].pago ? new Date().toLocaleDateString('pt-BR') : undefined; renderizarTudo(); }
+    function abrirEdicao(i) { const c = dadosAtuais[i]; document.getElementById('editIndex').value=i; document.getElementById('editNome').value=c.nome; document.getElementById('editDia').value=c.dia; document.getElementById('editValor').value=c.valor; document.getElementById('editObs').value=c.obs||''; modalEdicaoBS.show(); }
+    function salvarEdicao() { const i = document.getElementById('editIndex').value; dadosAtuais[i].nome = document.getElementById('editNome').value; dadosAtuais[i].dia = parseInt(document.getElementById('editDia').value); dadosAtuais[i].valor = fmtDinheiro(document.getElementById('editValor').value); dadosAtuais[i].obs = document.getElementById('editObs').value; modalEdicaoBS.hide(); renderizarTudo(); }
+    async function salvarNoGithub() { const btn = document.getElementById('btnSalvar'); btn.disabled=true; btn.innerText="Salvando..."; try { const body = { message: "Update via App", content: btoa(unescape(encodeURIComponent(JSON.stringify(dadosAtuais,null,2)))), sha: shaArquivo }; const r = await fetch(API_URL, { method:'PUT', headers:{'Authorization':`token ${TOKEN}`, 'Content-Type':'application/json'}, body:JSON.stringify(body) }); if(r.ok) { alert("✅ Sucesso!"); location.reload(); } else throw new Error(); } catch { alert("Erro ao salvar! Verifique conexão/token."); btn.disabled=false; btn.innerText="💾 TENTAR NOVAMENTE"; } }
 </script>
 </body>
 </html>
