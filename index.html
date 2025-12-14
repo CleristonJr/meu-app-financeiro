@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financeiro Cyberpunk</title>
+    <title>Financeiro Cyberpunk Pro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
     <style>
-        /* --- ESTILO VISUAL CYBERPUNK (O que você gostou) --- */
+        /* --- ESTILO VISUAL CYBERPUNK --- */
         [data-bs-theme="dark"] {
             --bg-body: radial-gradient(#12045a , #050116 50%, #030109);
             --bg-card: #1e1e1e;
             --border-color: #333;
-            --card-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 4px 10px rgba(0,0,0,0.6); /* Sombras fortes */
+            --card-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 4px 10px rgba(0,0,0,0.6);
             --text-main: #e0e0e0;
             --input-bg: #2c2c2c;
             --chart-color: #bbb;
@@ -42,7 +42,7 @@
             transition: all 0.3s ease;
         }
 
-        /* TELA DE LOGIN (OVERLAY) */
+        /* LOGIN */
         #loginScreen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 9999;
@@ -66,11 +66,10 @@
         .form-control:focus {
             background-color: var(--input-bg);
             color: var(--text-main);
-            border-color: #6610f2; /* Roxo Neon */
+            border-color: #6610f2;
             box-shadow: 0 0 0 0.25rem rgba(102, 16, 242, 0.25);
         }
 
-        /* Botão Flutuante Tema */
         .theme-toggle {
             position: fixed; top: 20px; right: 20px; z-index: 1050;
             border-radius: 50%; width: 50px; height: 50px;
@@ -79,12 +78,6 @@
             transition: transform 0.2s;
         }
         .theme-toggle:hover { transform: scale(1.1); }
-
-        /* Estilos Específicos */
-        .tabela-pagas { opacity: 0.7; }
-        .riscado { text-decoration: line-through; color: #777 !important; }
-        .texto-positivo { color: #00ff88; font-weight: bold; text-shadow: 0 0 5px rgba(0,255,136,0.3); }
-        .texto-negativo { color: #ff4d4d; font-weight: bold; }
         
         .btn-logout {
             position: fixed; top: 80px; right: 20px; z-index: 1050;
@@ -92,6 +85,20 @@
             display: flex; align-items: center; justify-content: center;
             box-shadow: var(--card-shadow); font-size: 1.2rem;
         }
+
+        /* Custom Colors */
+        .riscado { text-decoration: line-through; color: #777 !important; }
+        .texto-positivo { color: #00ff88; font-weight: bold; }
+        .texto-negativo { color: #ff4d4d; font-weight: bold; }
+        
+        /* Saldo Display */
+        .saldo-box {
+            font-size: 1.5rem;
+            font-weight: 800;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+        .saldo-verde { color: #00ff88; }
+        .saldo-vermelho { color: #ff4d4d; }
 
         @media (max-width: 768px) {
             .btn-action { padding: 4px 8px; }
@@ -105,19 +112,20 @@
 <div id="loginScreen">
     <div class="card p-5 text-center" style="max-width: 400px; width: 90%;">
         <h2 class="mb-4 fw-bold">🔒 Acesso Seguro</h2>
-        <p class="text-muted small mb-3">Insira seu Token do GitHub para acessar seus dados.</p>
+        <p class="text-muted small mb-3">Insira seu Token do GitHub</p>
         <div class="mb-3">
-            <input type="password" id="inputToken" class="form-control form-control-lg text-center" placeholder="ghp_seu_token_aqui">
+            <input type="password" id="inputToken" class="form-control form-control-lg text-center" placeholder="ghp_...">
         </div>
         <button onclick="fazerLogin()" class="btn btn-primary btn-lg w-100 fw-bold shadow">ENTRAR</button>
-        <p class="mt-3 small text-muted">O token será salvo no seu navegador.</p>
     </div>
 </div>
 
-<button onclick="alternarTema()" class="btn btn-primary theme-toggle" id="btnTema" title="Mudar Tema"><i class="bi bi-moon-stars-fill"></i></button>
-<button onclick="fazerLogout()" class="btn btn-danger btn-logout" title="Sair / Trocar Token"><i class="bi bi-box-arrow-right"></i></button>
+<button onclick="alternarTema()" class="btn btn-primary theme-toggle" id="btnTema"><i class="bi bi-moon-stars-fill"></i></button>
+<button onclick="fazerLogout()" class="btn btn-danger btn-logout"><i class="bi bi-box-arrow-right"></i></button>
 
-<div class="container py-4" id="painelPrincipal" style="max-width: 1100px; display: none;"> <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container py-4" id="painelPrincipal" style="max-width: 1100px; display: none;">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold text-white m-0"><i class="bi bi-wallet2"></i> Controle Financeiro</h4>
         <button class="btn btn-success fw-bold shadow" data-bs-toggle="modal" data-bs-target="#modalGanho">
             <i class="bi bi-plus-lg"></i> GANHO
@@ -125,9 +133,19 @@
     </div>
 
     <div class="card p-3 border-0">
-        <div class="text-center mb-2 fs-5 fw-bold text-secondary">📊 Fluxo de Despesas</div>
-        <div style="height: 220px;">
-            <canvas id="graficoDias"></canvas>
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="text-center text-md-start mb-2 fs-5 fw-bold text-secondary">📊 Fluxo de Despesas</div>
+                <div style="height: 200px;">
+                    <canvas id="graficoDias"></canvas>
+                </div>
+            </div>
+            <div class="col-md-4 text-center border-start border-secondary border-opacity-25 mt-3 mt-md-0">
+                <h6 class="text-muted text-uppercase fw-bold ls-1">Saldo Final</h6>
+                <div class="small text-muted mb-2">(Entradas - Total Despesas)</div>
+                <div id="displaySaldo" class="saldo-box">Carregando...</div>
+                <div id="msgSaldo" class="small mt-2 fw-bold"></div>
+            </div>
         </div>
     </div>
     
@@ -140,6 +158,14 @@
                     <div class="col-6"><label class="small text-muted">Dia</label><input type="number" id="novoDia" class="form-control" placeholder="10"></div>
                     <div class="col-6"><label class="small text-muted">Valor</label><input type="text" id="novoValor" class="form-control" placeholder="0,00"></div>
                     <div class="col-12"><label class="small text-muted">Obs</label><input type="text" id="novaObs" class="form-control"></div>
+                    
+                    <div class="col-12 mt-2">
+                        <div class="form-check form-switch p-2 border rounded bg-opacity-10 bg-secondary">
+                            <input class="form-check-input" type="checkbox" id="novoPago" style="margin-left: 0.5em; cursor: pointer;">
+                            <label class="form-check-label fw-bold ms-2" for="novoPago">Essa conta já está paga?</label>
+                        </div>
+                    </div>
+
                     <div class="col-12 mt-3"><button onclick="adicionarDespesa()" class="btn btn-primary w-100 fw-bold shadow">Lançar</button></div>
                 </div>
             </div>
@@ -173,7 +199,10 @@
             </div>
 
             <div class="card p-3 opacity-75">
-                <h5 class="text-secondary text-center mb-2 fw-bold"><i class="bi bi-check2-circle"></i> Histórico</h5>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="text-secondary fw-bold m-0"><i class="bi bi-check2-circle"></i> Histórico</h5>
+                    <span class="badge bg-secondary bg-opacity-25 text-light border border-secondary" id="totalHistorico">R$ 0,00</span>
+                </div>
                  <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0">
                         <tbody id="tabelaPagas"></tbody>
@@ -224,20 +253,18 @@
 </div>
 
 <script>
-    // --- ⚠️ CONFIGURAÇÃO: APENAS USUÁRIO E REPO ---
+    // --- CONFIGURAÇÃO ---
     const USUARIO = "CleristonJr";
     const REPOSITORIO = "ContasAPagar";
-    // O TOKEN AGORA É PEDIDO NA TELA DE LOGIN
-    // ----------------------------------------------
+    // --------------------
 
-    let TOKEN = localStorage.getItem('github_token') || ""; // Tenta pegar do navegador
+    let TOKEN = localStorage.getItem('github_token') || "";
     const API_URL = `https://api.github.com/repos/${USUARIO}/${REPOSITORIO}/contents/contas.json`;
-    
     let dadosAtuais = [];
     let shaArquivo = "";
     let modalEdicaoBS, modalGanhoBS, meuGrafico;
 
-    // --- SISTEMA DE LOGIN ---
+    // --- LOGIN ---
     function verificarLogin() {
         if(TOKEN && TOKEN.startsWith('ghp_')) {
             document.getElementById('loginScreen').style.display = 'none';
@@ -252,30 +279,20 @@
     function fazerLogin() {
         const input = document.getElementById('inputToken').value.trim();
         if(!input.startsWith('ghp_')) return alert("Token inválido! Deve começar com 'ghp_'");
-        
         localStorage.setItem('github_token', input);
         TOKEN = input;
         verificarLogin();
     }
 
     function fazerLogout() {
-        if(confirm("Deseja sair e remover o token deste dispositivo?")) {
-            localStorage.removeItem('github_token');
-            location.reload();
-        }
+        if(confirm("Sair?")) { localStorage.removeItem('github_token'); location.reload(); }
     }
 
-    // --- INICIALIZAÇÃO ---
     window.onload = function() {
-        // Tema
         const tema = localStorage.getItem('tema') || 'dark';
         document.documentElement.setAttribute('data-bs-theme', tema);
-        
-        // Modals
         modalEdicaoBS = new bootstrap.Modal(document.getElementById('modalEdicao'));
         modalGanhoBS = new bootstrap.Modal(document.getElementById('modalGanho'));
-        
-        // Login
         verificarLogin();
     };
 
@@ -294,8 +311,7 @@
     async function carregarDados() {
         try {
             const resp = await fetch(`${API_URL}?t=${Date.now()}`, { headers: { 'Authorization': `token ${TOKEN}` } });
-            if(resp.status === 401) { alert("Token inválido ou expirado! Faça login novamente."); fazerLogout(); return; }
-            
+            if(resp.status === 401) { alert("Token inválido!"); fazerLogout(); return; }
             const json = await resp.json();
             dadosAtuais = JSON.parse(decodeURIComponent(escape(atob(json.content))));
             shaArquivo = json.sha;
@@ -311,11 +327,15 @@
         const tPagas = document.getElementById('tabelaPagas');
         
         tGanhos.innerHTML = ""; tPendentes.innerHTML = ""; tPagas.innerHTML = "";
-        let sGanhos = 0, sPagar = 0, cGanhos = 0, cPend = 0;
+        
+        let sGanhos = 0, sPagar = 0, sHistorico = 0; // Soma dos valores
+        let cGanhos = 0, cPend = 0;
 
         dadosAtuais.forEach((c, i) => {
+            const val = strToFloat(c.valor);
+            
             if(c.tipo === 'ganho') {
-                sGanhos += strToFloat(c.valor); cGanhos++;
+                sGanhos += val; cGanhos++;
                 tGanhos.innerHTML += `
                     <tr>
                         <td class="fw-bold">${c.dia}</td>
@@ -327,8 +347,9 @@
                         </td>
                     </tr>`;
             } else {
+                // É Despesa
                 if(!c.pago) {
-                    sPagar += strToFloat(c.valor); cPend++;
+                    sPagar += val; cPend++;
                     tPendentes.innerHTML += `
                         <tr>
                             <td class="fw-bold fs-5 text-white">${c.dia}</td>
@@ -341,6 +362,7 @@
                             </td>
                         </tr>`;
                 } else {
+                    sHistorico += val;
                     tPagas.innerHTML += `
                         <tr class="riscado">
                             <td>${c.dia}</td><td>${c.nome}</td><td>${c.valor}</td>
@@ -350,8 +372,29 @@
             }
         });
 
+        // Atualiza Badges e Totais
         document.getElementById('totalGanhos').innerText = "R$ " + sGanhos.toFixed(2).replace('.',',');
         document.getElementById('totalPagar').innerText = "R$ " + sPagar.toFixed(2).replace('.',',');
+        document.getElementById('totalHistorico').innerText = "R$ " + sHistorico.toFixed(2).replace('.',',');
+        
+        // --- CÁLCULO DO SALDO (Entradas - Total Despesas) ---
+        const totalDespesas = sPagar + sHistorico;
+        const saldo = sGanhos - totalDespesas;
+        const divSaldo = document.getElementById('displaySaldo');
+        const msgSaldo = document.getElementById('msgSaldo');
+        
+        divSaldo.innerText = "R$ " + saldo.toFixed(2).replace('.',',');
+        
+        if(saldo >= 0) {
+            divSaldo.className = "saldo-box saldo-verde";
+            msgSaldo.innerText = "Parabéns! Você está no azul. 🤑";
+            msgSaldo.className = "small mt-2 fw-bold text-success";
+        } else {
+            divSaldo.className = "saldo-box saldo-vermelho";
+            msgSaldo.innerText = "Atenção! Você está gastando mais do que ganha. 🚨";
+            msgSaldo.className = "small mt-2 fw-bold text-danger";
+        }
+
         document.getElementById('msgVazioGanhos').style.display = cGanhos ? 'none' : 'block';
         document.getElementById('msgVazioPendentes').style.display = cPend ? 'none' : 'block';
         
@@ -393,9 +436,27 @@
     // --- AÇÕES ---
     function adicionarDespesa() {
         const n = document.getElementById('novoNome').value, d = document.getElementById('novoDia').value, v = document.getElementById('novoValor').value, o = document.getElementById('novaObs').value;
+        // Verifica o Switch "Já Pago?"
+        const jaPago = document.getElementById('novoPago').checked;
+        
         if(!n || !d || !v) return alert("Preencha tudo!");
-        dadosAtuais.push({ nome:n, dia:parseInt(d), valor:fmtDinheiro(v), obs:o, pago:false, tipo:'despesa' });
+        
+        const novaConta = { 
+            nome:n, 
+            dia:parseInt(d), 
+            valor:fmtDinheiro(v), 
+            obs:o, 
+            pago: jaPago, // Define se já nasce pago
+            tipo:'despesa' 
+        };
+        
+        // Se já pago, adiciona a data de hoje
+        if(jaPago) novaConta.data_pagamento = new Date().toLocaleDateString('pt-BR');
+
+        dadosAtuais.push(novaConta);
         renderizarTudo(); limpaForm('novo');
+        // Reseta o switch
+        document.getElementById('novoPago').checked = false;
     }
 
     function adicionarGanho() {
