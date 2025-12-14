@@ -20,6 +20,8 @@
             --input-bg: #2c2c2c;
             --chart-color: #bbb;
             --chart-grid: #444;
+            --tab-active-bg: #2c2c2c;
+            --tab-border: #444;
         }
 
         [data-bs-theme="light"] {
@@ -31,6 +33,8 @@
             --input-bg: #fff;
             --chart-color: #666;
             --chart-grid: #ddd;
+            --tab-active-bg: #fff;
+            --tab-border: #dee2e6;
         }
 
         body { 
@@ -86,6 +90,28 @@
             box-shadow: var(--card-shadow); font-size: 1.2rem;
         }
 
+        /* ABAS ESTILIZADAS */
+        .nav-tabs { border-bottom: 1px solid var(--border-color); }
+        .nav-link { 
+            color: #888; 
+            font-weight: bold; 
+            border: none; 
+            margin-right: 5px;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s;
+        }
+        .nav-link:hover { color: #aaa; background: rgba(255,255,255,0.05); }
+        .nav-link.active {
+            background-color: var(--tab-active-bg);
+            border: 1px solid var(--border-color);
+            border-bottom-color: var(--tab-active-bg);
+            color: var(--text-main) !important;
+        }
+        /* Cores específicas para as abas */
+        #tab-pendentes.active { color: #dc3545 !important; }
+        #tab-ganhos.active { color: #198754 !important; }
+        #tab-historico.active { color: #0d6efd !important; }
+
         /* Custom Colors */
         .riscado { text-decoration: line-through; color: #777 !important; }
         .texto-positivo { color: #00ff88; font-weight: bold; }
@@ -104,6 +130,7 @@
             .btn-action { padding: 4px 8px; }
             .theme-toggle { top: 10px; right: 10px; width: 40px; height: 40px; }
             .btn-logout { top: 60px; right: 10px; width: 35px; height: 35px; }
+            .nav-link { font-size: 0.9rem; padding: 8px 10px; }
         }
     </style>
 </head>
@@ -123,13 +150,18 @@
 <button onclick="alternarTema()" class="btn btn-primary theme-toggle" id="btnTema"><i class="bi bi-moon-stars-fill"></i></button>
 <button onclick="fazerLogout()" class="btn btn-danger btn-logout"><i class="bi bi-box-arrow-right"></i></button>
 
-<div class="container py-4" id="painelPrincipal" style="max-width: 1100px; display: none;">
+<div class="container py-4" id="painelPrincipal" style="max-width: 1000px; display: none;">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-2">
         <h4 class="fw-bold text-white m-0"><i class="bi bi-wallet2"></i> Controle Financeiro</h4>
-        <button class="btn btn-success fw-bold shadow" data-bs-toggle="modal" data-bs-target="#modalGanho">
-            <i class="bi bi-plus-lg"></i> GANHO
-        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary fw-bold shadow" data-bs-toggle="modal" data-bs-target="#modalDespesa">
+                <i class="bi bi-dash-circle"></i> NOVA DESPESA
+            </button>
+            <button class="btn btn-success fw-bold shadow" data-bs-toggle="modal" data-bs-target="#modalGanho">
+                <i class="bi bi-plus-circle"></i> NOVO GANHO
+            </button>
+        </div>
     </div>
 
     <div class="card p-3 border-0">
@@ -149,45 +181,30 @@
         </div>
     </div>
     
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card p-3 h-100 border-primary border-opacity-25" style="border-width: 2px;">
-                <h5 class="mb-3 text-center text-primary fw-bold">➕ Nova Despesa</h5>
-                <div class="row g-2">
-                    <div class="col-12"><label class="small text-muted">Nome</label><input type="text" id="novoNome" class="form-control"></div>
-                    <div class="col-6"><label class="small text-muted">Dia</label><input type="number" id="novoDia" class="form-control"></div>
-                    <div class="col-6"><label class="small text-muted">Valor</label><input type="text" id="novoValor" class="form-control" placeholder="0,00"></div>
-                    <div class="col-12"><label class="small text-muted">Obs</label><input type="text" id="novaObs" class="form-control"></div>
-                    
-                    <div class="col-12 mt-2">
-                        <div class="form-check form-switch p-2 border rounded bg-opacity-10 bg-secondary">
-                            <input class="form-check-input" type="checkbox" id="novoPago" style="margin-left: 0.5em; cursor: pointer;">
-                            <label class="form-check-label fw-bold ms-2" for="novoPago">Essa conta já está paga?</label>
-                        </div>
-                    </div>
+    <ul class="nav nav-tabs mb-3" id="minhasAbas" role="tablist">
+        <li class="nav-item flex-fill text-center" role="presentation">
+            <button class="nav-link w-100 active" id="tab-pendentes" data-bs-toggle="tab" data-bs-target="#conteudo-pendentes" type="button" role="tab">
+                📅 A PAGAR
+            </button>
+        </li>
+        <li class="nav-item flex-fill text-center" role="presentation">
+            <button class="nav-link w-100" id="tab-ganhos" data-bs-toggle="tab" data-bs-target="#conteudo-ganhos" type="button" role="tab">
+                🤑 ENTRADAS
+            </button>
+        </li>
+        <li class="nav-item flex-fill text-center" role="presentation">
+            <button class="nav-link w-100" id="tab-historico" data-bs-toggle="tab" data-bs-target="#conteudo-historico" type="button" role="tab">
+                ✅ HISTÓRICO
+            </button>
+        </li>
+    </ul>
 
-                    <div class="col-12 mt-3"><button onclick="adicionarDespesa()" class="btn btn-primary w-100 fw-bold shadow">Lançar</button></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-8">
-            <div class="card p-3 border-success border-opacity-25" style="border-width: 1px;">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5 class="text-success fw-bold m-0"><i class="bi bi-graph-up-arrow"></i> Entradas</h5>
-                    <span class="badge bg-success bg-opacity-10 text-success border border-success" id="totalGanhos">R$ 0,00</span>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle table-sm mb-0">
-                        <tbody id="tabelaGanhos"></tbody>
-                    </table>
-                </div>
-                <p id="msgVazioGanhos" class="text-center text-muted mt-2 small" style="display:none;">Sem registros.</p>
-            </div>
-
+    <div class="tab-content" id="minhasAbasContent">
+        
+        <div class="tab-pane fade show active" id="conteudo-pendentes" role="tabpanel">
             <div class="card p-3 border-danger border-opacity-25" style="border-width: 1px;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5 class="text-danger fw-bold m-0"><i class="bi bi-hourglass-split"></i> A Pagar</h5>
+                    <h5 class="text-danger fw-bold m-0"><i class="bi bi-hourglass-split"></i> Contas Pendentes</h5>
                     <span class="badge bg-danger bg-opacity-10 text-danger border border-danger" id="totalPagar">R$ 0,00</span>
                 </div>
                 <div class="table-responsive">
@@ -197,13 +214,30 @@
                 </div>
                 <p id="msgVazioPendentes" class="text-center text-muted mt-2 small" style="display:none;">Tudo pago! 🎉</p>
             </div>
+        </div>
 
+        <div class="tab-pane fade" id="conteudo-ganhos" role="tabpanel">
+            <div class="card p-3 border-success border-opacity-25" style="border-width: 1px;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="text-success fw-bold m-0"><i class="bi bi-graph-up-arrow"></i> Ganhos Registrados</h5>
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success" id="totalGanhos">R$ 0,00</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-sm mb-0">
+                        <tbody id="tabelaGanhos"></tbody>
+                    </table>
+                </div>
+                <p id="msgVazioGanhos" class="text-center text-muted mt-2 small" style="display:none;">Sem registros.</p>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="conteudo-historico" role="tabpanel">
             <div class="card p-3 opacity-75">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5 class="text-secondary fw-bold m-0"><i class="bi bi-check2-circle"></i> Histórico</h5>
+                    <h5 class="text-secondary fw-bold m-0"><i class="bi bi-check2-circle"></i> Contas Pagas</h5>
                     <span class="badge bg-secondary bg-opacity-25 text-light border border-secondary" id="totalHistorico">R$ 0,00</span>
                 </div>
-                 <div class="table-responsive">
+                <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0">
                         <tbody id="tabelaPagas"></tbody>
                     </table>
@@ -217,19 +251,46 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalDespesa" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-primary">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold text-primary"><i class="bi bi-dash-circle"></i> Nova Despesa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3"><label class="small text-muted">Nome da Conta</label><input type="text" id="novoNome" class="form-control"></div>
+                <div class="row mb-3">
+                    <div class="col-6"><label class="small text-muted">Dia Vencimento</label><input type="number" id="novoDia" class="form-control"></div>
+                    <div class="col-6"><label class="small text-muted">Valor</label><input type="text" id="novoValor" class="form-control" placeholder="R$ 0,00"></div>
+                </div>
+                <div class="mb-3"><label class="small text-muted">Observação</label><input type="text" id="novaObs" class="form-control"></div>
+                
+                <div class="form-check form-switch p-2 border rounded bg-opacity-10 bg-secondary">
+                    <input class="form-check-input" type="checkbox" id="novoPago" style="margin-left: 0.5em; cursor: pointer;">
+                    <label class="form-check-label fw-bold ms-2" for="novoPago">Já está pago?</label>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button onclick="adicionarDespesa()" class="btn btn-primary w-100 fw-bold shadow">Adicionar Despesa</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="modalGanho" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-success">
-            <div class="modal-header border-0"><h5 class="modal-title fw-bold text-success">💰 Entrada de Valor</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header border-0"><h5 class="modal-title fw-bold text-success"><i class="bi bi-plus-circle"></i> Novo Ganho</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body">
-                <div class="mb-2"><label class="small text-muted">Origem</label><input type="text" id="ganhoNome" class="form-control"></div>
-                <div class="row mb-2">
+                <div class="mb-3"><label class="small text-muted">Origem (Ex: Salário)</label><input type="text" id="ganhoNome" class="form-control"></div>
+                <div class="row mb-3">
                     <div class="col-6"><label class="small text-muted">Dia</label><input type="number" id="ganhoDia" class="form-control"></div>
-                    <div class="col-6"><label class="small text-muted">Valor</label><input type="text" id="ganhoValor" class="form-control"></div>
+                    <div class="col-6"><label class="small text-muted">Valor</label><input type="text" id="ganhoValor" class="form-control" placeholder="R$ 0,00"></div>
                 </div>
                 <div class="mb-2"><label class="small text-muted">Obs</label><input type="text" id="ganhoObs" class="form-control"></div>
             </div>
-            <div class="modal-footer border-0"><button onclick="adicionarGanho()" class="btn btn-success w-100 fw-bold">Confirmar</button></div>
+            <div class="modal-footer border-0"><button onclick="adicionarGanho()" class="btn btn-success w-100 fw-bold">Confirmar Ganho</button></div>
         </div>
     </div>
 </div>
@@ -262,7 +323,7 @@
     const API_URL = `https://api.github.com/repos/${USUARIO}/${REPOSITORIO}/contents/contas.json`;
     let dadosAtuais = [];
     let shaArquivo = "";
-    let modalEdicaoBS, modalGanhoBS, meuGrafico;
+    let modalEdicaoBS, modalGanhoBS, modalDespesaBS, meuGrafico;
 
     // --- LOGIN ---
     function verificarLogin() {
@@ -294,8 +355,9 @@
         
         modalEdicaoBS = new bootstrap.Modal(document.getElementById('modalEdicao'));
         modalGanhoBS = new bootstrap.Modal(document.getElementById('modalGanho'));
+        modalDespesaBS = new bootstrap.Modal(document.getElementById('modalDespesa'));
         
-        // --- AUTO-PREENCHER DATA ATUAL ---
+        // --- AUTO-PREENCHER DATA ATUAL NOS MODALS ---
         const diaHoje = new Date().getDate();
         document.getElementById('novoDia').value = diaHoje;
         document.getElementById('ganhoDia').value = diaHoje;
@@ -452,8 +514,8 @@
         dadosAtuais.push(novaConta);
         renderizarTudo(); limpaForm('novo');
         document.getElementById('novoPago').checked = false;
-        // Reseta o dia para hoje novamente após limpar
         document.getElementById('novoDia').value = new Date().getDate();
+        modalDespesaBS.hide(); // Fecha o modal
     }
 
     function adicionarGanho() {
