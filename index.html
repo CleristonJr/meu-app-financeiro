@@ -166,8 +166,8 @@
     <div class="card p-3 border-0">
         <div class="row align-items-center">
             <div class="col-md-8">
-                <div class="text-center text-md-start mb-2 fs-5 fw-bold text-secondary">📊 Fluxo de Despesas</div>
-                <div style="height: 250px; width: 100%;">
+                <div class="text-center text-md-start mb-2 fs-5 fw-bold text-secondary">📊 Fluxo de Despesas 3D</div>
+                <div style="height: 280px; width: 100%;">
                     <canvas id="graficoDias"></canvas>
                 </div>
             </div>
@@ -429,14 +429,57 @@
         atualizarGrafico();
     }
 
-    // --- GRÁFICO CHART.JS COM EFEITO DEGRADÊ (TRANSLÚCIDO) ---
+    // --- PLUGIN PERSONALIZADO PARA EFEITO 3D NO CHART.JS ---
+    const plugin3D = {
+        id: 'custom3D',
+        beforeDatasetsDraw(chart, args, options) {
+            const { ctx } = chart;
+            const depthX = 15; // Profundidade horizontal
+            const depthY = 10; // Profundidade vertical
+
+            chart.data.datasets.forEach((dataset, i) => {
+                const meta = chart.getDatasetMeta(i);
+                meta.data.forEach((bar, index) => {
+                    const { x, y, width, height, base } = bar;
+                    // Define cores translúcidas para as faces laterais
+                    const sideColor = dataset.borderColor === '#22c55e' 
+                        ? 'rgba(34, 197, 94, 0.4)'  // Verde lateral
+                        : 'rgba(239, 68, 68, 0.4)'; // Vermelho lateral
+
+                    ctx.fillStyle = sideColor;
+                    ctx.strokeStyle = dataset.borderColor; // Borda brilhante
+                    ctx.lineWidth = 1;
+                    
+                    // Face Superior
+                    ctx.beginPath();
+                    ctx.moveTo(x - width / 2, y);
+                    ctx.lineTo(x + width / 2, y);
+                    ctx.lineTo(x + width / 2 + depthX, y - depthY);
+                    ctx.lineTo(x - width / 2 + depthX, y - depthY);
+                    ctx.closePath();
+                    ctx.fill(); ctx.stroke();
+
+                    // Face Lateral Direita
+                    ctx.beginPath();
+                    ctx.moveTo(x + width / 2, y);
+                    ctx.lineTo(x + width / 2 + depthX, y - depthY);
+                    ctx.lineTo(x + width / 2 + depthX, base - depthY);
+                    ctx.lineTo(x + width / 2, base);
+                    ctx.closePath();
+                    ctx.fill(); ctx.stroke();
+                });
+            });
+        }
+    };
+
+    // --- FUNÇÃO DO GRÁFICO COM O PLUGIN 3D APLICADO ---
     function atualizarGrafico() {
         const ctx = document.getElementById('graficoDias').getContext('2d');
         const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
         
         if(meuGrafico) meuGrafico.destroy();
 
-        // 1. Processar dados
+        // Processar dados
         const resumo = {};
         dadosAtuais.filter(d => d.tipo !== 'ganho').forEach(d => {
             const val = strToFloat(d.valor);
@@ -449,18 +492,17 @@
         const dataPagos = dias.map(d => resumo[d].pago);
         const dataFalta = dias.map(d => resumo[d].total - resumo[d].pago);
 
-        // 2. Criar Gradientes "Neon/Vidro"
+        // Criar Gradientes "Neon/Vidro" para a face frontal
         // Verde (Pago)
         const gradPago = ctx.createLinearGradient(0, 0, 0, 300);
-        gradPago.addColorStop(0, 'rgba(34, 197, 94, 0.9)'); // Topo forte
-        gradPago.addColorStop(1, 'rgba(34, 197, 94, 0.1)'); // Base transparente
+        gradPago.addColorStop(0, 'rgba(34, 197, 94, 0.8)');
+        gradPago.addColorStop(1, 'rgba(34, 197, 94, 0.2)');
 
         // Vermelho (Falta)
         const gradFalta = ctx.createLinearGradient(0, 0, 0, 300);
-        gradFalta.addColorStop(0, 'rgba(239, 68, 68, 0.9)'); 
-        gradFalta.addColorStop(1, 'rgba(239, 68, 68, 0.1)');
+        gradFalta.addColorStop(0, 'rgba(239, 68, 68, 0.8)'); 
+        gradFalta.addColorStop(1, 'rgba(239, 68, 68, 0.2)');
 
-        // 3. Configurar Chart.js
         Chart.defaults.color = isDark ? '#bbb' : '#333';
         Chart.defaults.borderColor = isDark ? '#444' : '#ddd';
 
@@ -470,23 +512,19 @@
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Pago',
-                        data: dataPagos,
+                        label: 'Pago', data: dataPagos,
                         backgroundColor: gradPago,
-                        borderColor: '#22c55e',
+                        borderColor: '#22c55e', // Cor da borda usada para identificar no plugin
                         borderWidth: 1,
-                        borderRadius: 4,
-                        barPercentage: 0.6,
+                        barPercentage: 0.7, categoryPercentage: 0.8,
                         stack: 'Stack 0',
                     },
                     {
-                        label: 'Falta',
-                        data: dataFalta,
+                        label: 'Falta', data: dataFalta,
                         backgroundColor: gradFalta,
-                        borderColor: '#ef4444',
+                        borderColor: '#ef4444', // Cor da borda usada para identificar no plugin
                         borderWidth: 1,
-                        borderRadius: 4,
-                        barPercentage: 0.6,
+                        barPercentage: 0.7, categoryPercentage: 0.8,
                         stack: 'Stack 0',
                     }
                 ]
@@ -494,28 +532,26 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: { padding: { top: 20, right: 20 } }, // Espaço para o efeito 3D não cortar
                 scales: {
-                    x: { grid: { display: false } }, // Remove grade vertical (visual mais limpo)
+                    x: { grid: { display: false } },
                     y: { beginAtZero: true, border: { display: false } }
                 },
                 plugins: {
                     tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
+                        mode: 'index', intersect: false,
+                        backgroundColor: 'rgba(0,0,0,0.8)', titleColor: '#fff', bodyColor: '#fff',
                         callbacks: {
                             footer: (items) => {
-                                let total = 0;
-                                items.forEach((i) => total += i.parsed.y);
+                                let total = 0; items.forEach((i) => total += i.parsed.y);
                                 return 'Total: R$ ' + total.toFixed(2).replace('.',',');
                             }
                         }
                     },
                     legend: { labels: { usePointStyle: true } }
                 }
-            }
+            },
+            plugins: [plugin3D] // Adiciona o nosso plugin personalizado
         });
     }
 
