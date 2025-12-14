@@ -464,79 +464,128 @@
     }
 
     // --- GRÁFICO ECHARTS 3D (ESTILO DA FOTO) ---
-    function atualizarGrafico() {
-        const dom = document.getElementById('graficoDias');
-        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-        
-        // Se já existe, destrói para recriar
-        if(meuGrafico) meuGrafico.dispose();
+    // --- GRÁFICO DE BARRAS CONVENCIONAL ---
+function atualizarGrafico() {
+    const dom = document.getElementById('graficoDias');
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
 
-        // Inicia ECharts
-        meuGrafico = echarts.init(dom, isDark ? 'dark' : null);
+    // Se já existe, destrói para recriar
+    if (meuGrafico) meuGrafico.destroy();
 
-        // Prepara dados: Soma total de despesas por dia
-        const resumo = {};
-        dadosAtuais.filter(d => d.tipo !== 'ganho').forEach(d => {
-            const val = strToFloat(d.valor);
-            if(!resumo[d.dia]) resumo[d.dia] = 0;
-            resumo[d.dia] += val;
-        });
-        const dias = Object.keys(resumo).sort((a,b)=>a-b);
-        // Cria o dataset no formato [Dia, Valor]
-        const dataSet = dias.map(d => ['Dia ' + d, resumo[d]]);
+    // Prepara dados: Soma total de despesas por dia
+    const resumo = {};
+    dadosAtuais.filter(d => d.tipo !== 'ganho').forEach(d => {
+        const val = strToFloat(d.valor);
+        if (!resumo[d.dia]) resumo[d.dia] = 0;
+        resumo[d.dia] += val;
+    });
+    const dias = Object.keys(resumo).sort((a, b) => a - b);
+    // Cria o dataset no formato para Chart.js
+    const labels = dias.map(d => 'Dia ' + d);
+    const data = dias.map(d => resumo[d]);
 
-        const option = {
-            backgroundColor: 'transparent',
-            tooltip: { trigger: 'item' },
-            // Configuração 3D
-            grid3D: {
-                boxWidth: 200,
-                boxDepth: 80,
-                viewControl: {
-                    // Posição da câmera para parecer a foto
-                    alpha: 20,
-                    beta: 30,
-                    distance: 250,
-                    panMouseButton: 'left',
-                    rotateMouseButton: 'right'
+    // Cria um gradiente para simular o efeito translúcido da imagem
+    const ctx = dom.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    // Cor de cima: azul translúcido brilhante
+    gradient.addColorStop(0, 'rgba(0, 255, 255, 0.6)');
+    // Cor de baixo: branco translúcido
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0.3)');
+
+    // Configurações do gráfico Chart.js
+    meuGrafico = new Chart(dom, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Total de Despesas',
+                data: data,
+                backgroundColor: gradient,
+                borderColor: 'rgba(255, 255, 255, 0.7)', // Borda branca para o efeito de vidro
+                borderWidth: 2,
+                // Sombra para o efeito 3D
+                barPercentage: 0.7, // Largura das barras
+                categoryPercentage: 0.8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false // Oculta a legenda
                 },
-                light: {
-                    main: { intensity: 1.2, shadow: true },
-                    ambient: { intensity: 0.3 }
-                }
-            },
-            xAxis3D: { type: 'category', name: '' },
-            yAxis3D: { type: 'value', name: '' },
-            zAxis3D: { type: 'value', name: '' },
-            series: [
-                {
-                    type: 'bar3D',
-                    data: dataSet,
-                    shading: 'lambert', // Sombreamento realista
-                    label: {
-                        show: true,
-                        position: 'top',
-                        textStyle: {
-                            color: isDark ? '#fff' : '#333',
-                            fontSize: 14,
-                            fontWeight: 'bold'
-                        },
-                        // Formata o rótulo para dinheiro
-                        formatter: function(params) {
-                            return 'R$ ' + params.value[1].toFixed(0);
+                tooltip: {
+                    callbacks: {
+                        // Formata o valor para dinheiro no tooltip
+                        label: function(context) {
+                            return 'Total: R$ ' + context.parsed.y.toFixed(2);
                         }
                     },
-                    itemStyle: {
-                        // Cor verde vibrante como na foto
-                        color: '#82e016',
-                        opacity: 0.9
+                    bodyFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    titleFont: {
+                        size: 16
+                    },
+                    padding: 10,
+                    cornerRadius: 8,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)' // Fundo do tooltip escuro
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false // Remove as linhas de grade verticais
+                    },
+                    ticks: {
+                        color: isDark ? '#fff' : '#333', // Cor dos rótulos do eixo X
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' // Cor das linhas de grade horizontais
+                    },
+                    ticks: {
+                        color: isDark ? '#fff' : '#333', // Cor dos rótulos do eixo Y
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        },
+                        // Formata os rótulos do eixo Y para dinheiro
+                        callback: function(value) {
+                            return 'R$ ' + value.toFixed(0);
+                        }
                     }
                 }
-            ]
-        };
-
-        meuGrafico.setOption(option);
-    }
+            },
+            layout: {
+                padding: {
+                    top: 20,
+                    bottom: 10,
+                    left: 10,
+                    right: 10
+                }
+            },
+            // Adiciona uma sombra global nas barras para o efeito 3D
+            elements: {
+                bar: {
+                    borderSkipped: 'bottom',
+                    shadowOffsetX: 3,
+                    shadowOffsetY: 3,
+                    shadowBlur: 5,
+                    shadowColor: 'rgba(0, 0, 0, 0.3)'
+                }
+            }
+        }
+    });
+}
 
     // --- CRUD ---
     function adicionarDespesa() {
