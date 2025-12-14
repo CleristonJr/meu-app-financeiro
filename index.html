@@ -2,37 +2,45 @@
 <html lang="pt-br" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#030109">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <title>Financeiro Pro</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financeiro Completo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
     <style>
-        /* --- ESTILO CYBERPUNK APP --- */
+        /* --- ESTILOS DINÂMICOS --- */
         [data-bs-theme="dark"] {
-            /* SEU GRADIENTE PERSONALIZADO */
+            /* Seu Gradiente Personalizado */
             --bg-body: radial-gradient(#12045a , #050116 50%, #030109);
             --bg-card: #1e1e1e;
             --border-color: #333;
             --card-shadow: 0 10px 30px rgba(0,0,0,0.7), 0 4px 10px rgba(0,0,0,0.5);
             --text-main: #e0e0e0;
             --input-bg: #2c2c2c;
+            --chart-color: #bbb;
+            --chart-grid: #444;
+        }
+
+        [data-bs-theme="light"] {
+            --bg-body: #f4f6f9;
+            --bg-card: #ffffff;
+            --border-color: #dee2e6;
+            --card-shadow: 0 10px 30px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05);
+            --text-main: #212529;
+            --input-bg: #fff;
+            --chart-color: #666;
+            --chart-grid: #ddd;
         }
 
         body { 
             background: var(--bg-body); 
             background-attachment: fixed;
             color: var(--text-main); 
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            transition: all 0.3s ease;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             min-height: 100vh;
-            padding-bottom: 80px;
         }
 
         .card { 
@@ -40,235 +48,299 @@
             border: 1px solid var(--border-color); 
             box-shadow: var(--card-shadow);
             margin-bottom: 20px;
-            border-radius: 15px;
+            transition: all 0.3s ease;
         }
 
-        /* Botão Flutuante de Config/Logout */
-        .config-btn {
+        .card-header-custom {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            font-weight: 600;
+        }
+
+        /* Botão Flutuante Tema */
+        .theme-toggle {
             position: fixed;
-            top: 15px;
-            right: 15px;
+            top: 20px;
+            right: 20px;
             z-index: 1050;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);
-            border: 1px solid #444;
-            color: #fff;
             border-radius: 50%;
-            width: 45px;
-            height: 45px;
+            width: 50px;
+            height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: var(--card-shadow);
+            font-size: 1.5rem;
+            transition: transform 0.2s;
         }
+        .theme-toggle:hover { transform: scale(1.1); }
 
         .form-control {
             background-color: var(--input-bg);
             border-color: var(--border-color);
             color: var(--text-main);
-            padding: 12px;
         }
         .form-control:focus {
             background-color: var(--input-bg);
-            color: #fff;
+            color: var(--text-main);
             border-color: #5c6bc0;
-            box-shadow: none;
+            box-shadow: 0 0 0 0.25rem rgba(92, 107, 192, 0.25);
         }
-
-        /* Login Screen Overlay */
-        #loginScreen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #030109;
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            padding: 20px;
-        }
-
-        canvas { max-height: 250px; }
-        .texto-data-pago { color: #198754; font-size: 0.8rem; font-weight: bold; display: block; }
+        
+        .tabela-pagas { opacity: 0.8; }
+        .riscado { text-decoration: line-through; color: #999 !important; opacity: 0.7; }
+        .texto-data-pago { color: #198754; font-size: 0.85em; font-weight: bold; }
+        .texto-positivo { color: #22c55e; font-weight: bold; }
 
         @media (max-width: 768px) {
-            h4 { font-size: 1.5rem; margin-top: 20px; }
-            /* Ajuste para caber 3 botões na mesma linha no celular */
-            .btn-action-group .btn { padding: 6px 10px; margin-left: 2px; }
+            .btn-action { padding: 4px 10px; margin-bottom: 5px; }
+            .theme-toggle { top: 10px; right: 10px; width: 40px; height: 40px; font-size: 1.2rem; }
         }
     </style>
 </head>
 <body>
 
-<div id="loginScreen">
-    <h2 class="text-white mb-4">🔐 Acesso Seguro</h2>
-    <div class="card p-4 w-100" style="max-width: 400px;">
-        <p class="text-muted small">Cole seu Token do GitHub abaixo. Ele será salvo apenas no seu celular.</p>
-        <input type="password" id="inputToken" class="form-control mb-3" placeholder="ghp_xxxxxxxxxxxx...">
-        <button onclick="salvarToken()" class="btn btn-primary w-100 fw-bold">ENTRAR</button>
-    </div>
-</div>
-
-<button onclick="fazerLogout()" class="config-btn" title="Sair">
-    <i class="bi bi-box-arrow-right"></i>
+<button onclick="alternarTema()" class="btn btn-primary theme-toggle" id="btnTema" title="Mudar Tema">
+    <i class="bi bi-moon-stars-fill"></i>
 </button>
 
-<div class="container py-3" style="max-width: 800px;">
+<div class="container py-4" style="max-width: 1000px;">
 
-    <h4 class="text-center mb-4 fw-bold text-white">💰 Financeiro App</h4>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold text-white m-0">💰 Controle Financeiro</h4>
+        <button class="btn btn-success fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalGanho">
+            <i class="bi bi-plus-circle"></i> NOVO GANHO
+        </button>
+    </div>
 
     <div class="card p-3">
-        <div class="text-center mb-2 fw-bold small text-muted">FLUXO DO MÊS</div>
-        <div style="height: 220px;">
+        <div class="card-header-custom text-center mb-2 fs-5">📊 Fluxo de Despesas (Dia a Dia)</div>
+        <div style="height: 250px;">
             <canvas id="graficoDias"></canvas>
         </div>
     </div>
     
-    <ul class="nav nav-pills nav-fill mb-3" id="pills-tab" role="tablist">
-        <li class="nav-item">
-            <button class="nav-link active fw-bold" data-bs-toggle="pill" data-bs-target="#tab-pagar">📅 A Pagar</button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#tab-pagos">✅ Histórico</button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#tab-add">➕ Novo</button>
-        </li>
-    </ul>
-
-    <div class="tab-content">
-        
-        <div class="tab-pane fade show active" id="tab-pagar">
-            <div class="card p-2 border-danger border-opacity-25" style="border-width: 1px;">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle table-sm mb-0 text-white">
-                        <tbody id="tabelaPendentes"></tbody>
-                    </table>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card p-3 h-100">
+                <h5 class="mb-3 text-center text-primary fw-bold">➕ Nova Despesa</h5>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label small text-muted fw-bold">Nome da Conta</label>
+                        <input type="text" id="novoNome" class="form-control" placeholder="Ex: Internet">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-muted fw-bold">Vencimento</label>
+                        <input type="number" id="novoDia" class="form-control" placeholder="10">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-muted fw-bold">Valor</label>
+                        <input type="text" id="novoValor" class="form-control" placeholder="R$ 0,00">
+                    </div>
+                    <div class="col-12">
+                         <label class="form-label small text-muted fw-bold">Observação</label>
+                        <input type="text" id="novaObs" class="form-control" placeholder="Opcional">
+                    </div>
+                    <div class="col-12 mt-4">
+                        <button onclick="adicionarDespesa()" class="btn btn-primary w-100 fw-bold shadow-sm">ADICIONAR DESPESA</button>
+                    </div>
                 </div>
-                <p id="msgVazio" class="text-center text-muted mt-3 small" style="display:none;">Tudo pago! 🎉</p>
             </div>
         </div>
 
-        <div class="tab-pane fade" id="tab-pagos">
-            <div class="card p-2 border-success border-opacity-25">
+        <div class="col-md-8">
+            
+            <div class="card p-3 border-success border-opacity-50" style="border-width: 1px;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-success fw-bold m-0">🤑 Ganhos / Entradas</h5>
+                    <span class="badge bg-success bg-opacity-25 text-success border border-success" id="totalGanhos">Total: R$ 0,00</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Dia</th>
+                                <th>Fonte</th>
+                                <th>Valor</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaGanhos"></tbody>
+                    </table>
+                </div>
+                <p id="msgVazioGanhos" class="text-center text-muted mt-3 small" style="display:none;">Nenhum ganho registrado.</p>
+            </div>
+
+            <div class="card p-3 border-danger border-opacity-50" style="border-width: 1px;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-danger fw-bold m-0">📅 A Pagar (Pendentes)</h5>
+                    <span class="badge bg-danger bg-opacity-25 text-danger border border-danger" id="totalPagar">Total: R$ 0,00</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Dia</th>
+                                <th>Conta</th>
+                                <th>Valor</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaPendentes"></tbody>
+                    </table>
+                </div>
+                <p id="msgVazioPendentes" class="text-center text-muted mt-3 small" style="display:none;">Nenhuma conta pendente 🎉</p>
+            </div>
+
+            <div class="card p-3 tabela-pagas border-secondary" style="border-width: 1px;">
+                <h5 class="text-secondary text-center mb-3 fw-bold">✅ Histórico de Pagos</h5>
                  <div class="table-responsive">
-                    <table class="table table-sm align-middle mb-0 text-white">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Dia</th>
+                                <th>Conta</th>
+                                <th>Valor</th>
+                                <th>Pago em</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
                         <tbody id="tabelaPagas"></tbody>
                     </table>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="tab-pane fade" id="tab-add">
-            <div class="card p-3">
-                <div class="row g-3">
-                    <div class="col-12">
-                        <label class="small text-muted fw-bold">Nome</label>
-                        <input type="text" id="novoNome" class="form-control" placeholder="Ex: Internet">
-                    </div>
-                    <div class="col-6">
-                        <label class="small text-muted fw-bold">Dia</label>
-                        <input type="number" id="novoDia" class="form-control" placeholder="10">
-                    </div>
-                    <div class="col-6">
-                        <label class="small text-muted fw-bold">Valor</label>
-                        <input type="tel" id="novoValor" class="form-control" placeholder="R$ 0,00">
-                    </div>
-                    <div class="col-12">
-                         <label class="small text-muted fw-bold">Obs</label>
-                        <input type="text" id="novaObs" class="form-control" placeholder="Opcional">
-                    </div>
-                    <div class="col-12 mt-3">
-                        <button onclick="adicionarConta()" class="btn btn-primary w-100 fw-bold shadow-sm py-3">SALVAR CONTA</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div> <div class="d-grid gap-2 mt-4">
-        <button onclick="salvarNoGithub()" id="btnSalvar" class="btn btn-success btn-lg fw-bold shadow py-3">
-            💾 SINCRONIZAR COM GITHUB
+    <div class="d-grid gap-2 my-4 pb-5">
+        <button onclick="salvarNoGithub()" id="btnSalvar" class="btn btn-primary btn-lg fw-bold shadow">
+            💾 SALVAR ALTERAÇÕES NO GITHUB
         </button>
     </div>
 
 </div>
 
+<div class="modal fade" id="modalGanho" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-success">
+                <h5 class="modal-title fw-bold text-success">💰 Adicionar Novo Ganho</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="small text-muted fw-bold">Origem (Ex: Salário, Freelance)</label>
+                    <input type="text" id="ganhoNome" class="form-control">
+                </div>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label class="small text-muted fw-bold">Dia Recebimento</label>
+                        <input type="number" id="ganhoDia" class="form-control" placeholder="05">
+                    </div>
+                    <div class="col-6">
+                        <label class="small text-muted fw-bold">Valor</label>
+                        <input type="text" id="ganhoValor" class="form-control" placeholder="R$ 0,00">
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="small text-muted fw-bold">Obs</label>
+                    <input type="text" id="ganhoObs" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success fw-bold" onclick="adicionarGanho()">Salvar Ganho</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="modalEdicao" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="background:#222;">
-            <div class="modal-header border-0">
-                <h5 class="modal-title fw-bold text-white">✏️ Editar</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">✏️ Editar Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editIndex"> 
-                <div class="mb-3"><label class="small text-muted">Nome</label><input type="text" id="editNome" class="form-control"></div>
+                <div class="mb-3"><label class="small text-muted fw-bold">Nome</label><input type="text" id="editNome" class="form-control"></div>
                 <div class="row mb-3">
-                    <div class="col-6"><label class="small text-muted">Dia</label><input type="number" id="editDia" class="form-control"></div>
-                    <div class="col-6"><label class="small text-muted">Valor</label><input type="text" id="editValor" class="form-control"></div>
+                    <div class="col-6"><label class="small text-muted fw-bold">Dia</label><input type="number" id="editDia" class="form-control"></div>
+                    <div class="col-6"><label class="small text-muted fw-bold">Valor</label><input type="text" id="editValor" class="form-control"></div>
                 </div>
-                <div class="mb-2"><label class="small text-muted">Obs</label><input type="text" id="editObs" class="form-control"></div>
+                <div class="mb-2"><label class="small text-muted fw-bold">Obs</label><input type="text" id="editObs" class="form-control"></div>
             </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-primary w-100 fw-bold" onclick="salvarEdicao()">Atualizar</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary fw-bold" onclick="salvarEdicao()">Salvar</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // --- CONFIGURAÇÃO ---
+    // --- ⚠️ CONFIGURAÇÃO ⚠️ ---
     const USUARIO = "CleristonJr";
     const REPOSITORIO = "ContasAPagar";
-    // --------------------
+    const TOKEN = "ghp_SEU_TOKEN_AQUI"; // <--- SEU TOKEN
+    // --------------------------
 
     const API_URL = `https://api.github.com/repos/${USUARIO}/${REPOSITORIO}/contents/contas.json`;
     let dadosAtuais = [];
     let shaArquivo = "";
     let modalEdicaoBS;
+    let modalGanhoBS;
     let meuGrafico = null;
-    let userToken = "";
+
+    function aplicarTemaInicial() {
+        const temaSalvo = localStorage.getItem('tema') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', temaSalvo);
+        atualizarIconeTema(temaSalvo);
+    }
+
+    function alternarTema() {
+        const html = document.documentElement;
+        const novoTema = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-bs-theme', novoTema);
+        localStorage.setItem('tema', novoTema);
+        atualizarIconeTema(novoTema);
+        if(meuGrafico) atualizarGrafico(); 
+    }
+
+    function atualizarIconeTema(tema) {
+        const btn = document.getElementById('btnTema');
+        if (tema === 'dark') {
+            btn.innerHTML = '<i class="bi bi-moon-stars-fill"></i>';
+            btn.className = 'btn btn-primary theme-toggle';
+        } else {
+            btn.innerHTML = '<i class="bi bi-sun-fill"></i>';
+            btn.className = 'btn btn-warning theme-toggle text-dark';
+        }
+    }
 
     window.onload = function() {
+        aplicarTemaInicial();
         modalEdicaoBS = new bootstrap.Modal(document.getElementById('modalEdicao'));
-        verificarLogin();
+        modalGanhoBS = new bootstrap.Modal(document.getElementById('modalGanho'));
+        carregarDados();
     };
-
-    function verificarLogin() {
-        const tokenSalvo = localStorage.getItem('github_token_financeiro');
-        if (tokenSalvo) {
-            userToken = tokenSalvo;
-            document.getElementById('loginScreen').style.display = 'none';
-            carregarDados();
-        } else {
-            document.getElementById('loginScreen').style.display = 'flex';
-        }
-    }
-
-    function salvarToken() {
-        const input = document.getElementById('inputToken').value.trim();
-        if (input.startsWith('ghp_')) {
-            localStorage.setItem('github_token_financeiro', input);
-            verificarLogin();
-        } else {
-            alert("Token inválido! Deve começar com 'ghp_'");
-        }
-    }
-
-    function fazerLogout() {
-        if(confirm("Deseja sair e remover o Token deste dispositivo?")) {
-            localStorage.removeItem('github_token_financeiro');
-            location.reload();
-        }
-    }
 
     function textoParaFloat(texto) {
         let limpo = texto.replace('R$', '').replaceAll('.', '').replace(',', '.').trim();
         return parseFloat(limpo) || 0;
     }
 
+    // --- GRÁFICO (FILTRADO SÓ PARA DESPESAS) ---
     function atualizarGrafico() {
+        const temaAtual = document.documentElement.getAttribute('data-bs-theme');
+        const corTexto = temaAtual === 'dark' ? '#bbb' : '#333';
+        const corGrid = temaAtual === 'dark' ? '#444' : '#ddd';
+
         const resumoPorDia = {};
-        dadosAtuais.forEach(conta => {
+        
+        // Filtra apenas despesas para o gráfico
+        dadosAtuais.filter(d => d.tipo !== 'ganho').forEach(conta => {
             const dia = conta.dia;
             const valor = textoParaFloat(conta.valor);
             if (!resumoPorDia[dia]) resumoPorDia[dia] = { total: 0, pago: 0 };
@@ -277,33 +349,32 @@
         });
 
         const dias = Object.keys(resumoPorDia).sort((a, b) => parseInt(a) - parseInt(b));
-        const labels = dias.map(d => `${d}`);
+        const labels = dias.map(d => `Dia ${d}`);
         const vlrPagos = dias.map(d => resumoPorDia[d].pago.toFixed(2));
         const vlrResto = dias.map(d => (resumoPorDia[d].total - resumoPorDia[d].pago).toFixed(2));
 
         const ctx = document.getElementById('graficoDias').getContext('2d');
         if (meuGrafico) meuGrafico.destroy();
 
-        Chart.defaults.color = '#bbb';
-        Chart.defaults.borderColor = '#444';
+        Chart.defaults.color = corTexto;
+        Chart.defaults.borderColor = corGrid;
 
         meuGrafico = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: labels,
                 datasets: [
-                    { label: 'Pago', data: vlrPagos, backgroundColor: '#22c55e', borderRadius: 4 },
-                    { label: 'Falta', data: vlrResto, backgroundColor: '#ef4444', borderRadius: 4 }
+                    { label: 'Pago', data: vlrPagos, backgroundColor: '#22c55e', stack: '0', borderRadius: 4 },
+                    { label: 'Falta', data: vlrResto, backgroundColor: '#ef4444', stack: '0', borderRadius: 4 }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    x: { stacked: true, grid: { display: false } },
-                    y: { stacked: true, display: false } 
-                },
-                plugins: { legend: { display: false } } 
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, grid: { color: corGrid } }
+                }
             }
         });
     }
@@ -311,14 +382,7 @@
     async function carregarDados() {
         try {
             const urlTime = `${API_URL}?t=${new Date().getTime()}`;
-            const resp = await fetch(urlTime, { headers: { 'Authorization': `token ${userToken}` } });
-            
-            if(resp.status === 401) {
-                alert("Token expirado ou inválido. Faça login novamente.");
-                fazerLogout();
-                return;
-            }
-
+            const resp = await fetch(urlTime, { headers: { 'Authorization': `token ${TOKEN}` } });
             const json = await resp.json();
             const conteudo = decodeURIComponent(escape(window.atob(json.content)));
             shaArquivo = json.sha;
@@ -326,79 +390,133 @@
             renderizarTudo();
         } catch (erro) {
             console.error(erro);
-            alert("Erro de conexão.");
+            alert("Erro ao carregar! Verifique o Token.");
         }
     }
 
     function renderizarTudo() {
+        // Ordena tudo por dia
         dadosAtuais.sort((a, b) => a.dia - b.dia);
-        
-        const pendentes = document.getElementById('tabelaPendentes');
-        const pagas = document.getElementById('tabelaPagas');
-        pendentes.innerHTML = "";
-        pagas.innerHTML = "";
-        let temPendencia = false;
-
-        dadosAtuais.forEach((c, i) => {
-            if (!c.pago) {
-                temPendencia = true;
-                pendentes.innerHTML += `
-                    <tr>
-                        <td width="15%" class="fw-bold fs-5 text-center">${c.dia}</td>
-                        <td>
-                            <div class="fw-bold">${c.nome}</div>
-                            <div class="small text-warning">${c.valor}</div>
-                            ${c.obs ? `<div class="small text-muted" style="font-size:0.7em">${c.obs}</div>` : ''}
-                        </td>
-                        <td class="text-end btn-action-group" style="min-width: 120px;">
-                            <button class="btn btn-sm btn-outline-info" onclick="abrirEdicao(${i})"><i class="bi bi-pencil-fill"></i></button>
-                            <button class="btn btn-sm btn-success" onclick="alternarStatus(${i})"><i class="bi bi-check-lg"></i></button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="removerConta(${i})"><i class="bi bi-trash-fill"></i></button>
-                        </td>
-                    </tr>`;
-            } else {
-                pagas.innerHTML += `
-                    <tr class="riscado" style="opacity:0.6">
-                        <td width="15%" class="text-center">${c.dia}</td>
-                        <td>
-                            <div>${c.nome}</div>
-                            <small>${c.valor}</small>
-                        </td>
-                        <td class="text-end btn-action-group" style="min-width: 100px;">
-                            <span class="texto-data-pago mb-1">${c.data_pagamento || 'Hoje'}</span>
-                            <button class="btn btn-sm btn-outline-secondary" onclick="alternarStatus(${i})"><i class="bi bi-arrow-counterclockwise"></i></button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="removerConta(${i})"><i class="bi bi-trash-fill"></i></button>
-                        </td>
-                    </tr>`;
-            }
-        });
-        document.getElementById('msgVazio').style.display = temPendencia ? 'none' : 'block';
+        renderizarTabelas();
         atualizarGrafico();
     }
 
-    function adicionarConta() {
+    function renderizarTabelas() {
+        const tGanhos = document.getElementById('tabelaGanhos');
+        const tPendentes = document.getElementById('tabelaPendentes');
+        const tPagas = document.getElementById('tabelaPagas');
+        
+        tGanhos.innerHTML = "";
+        tPendentes.innerHTML = "";
+        tPagas.innerHTML = "";
+        
+        let sumGanhos = 0;
+        let sumPagar = 0;
+        let countGanhos = 0;
+        let countPendentes = 0;
+
+        dadosAtuais.forEach((c, i) => {
+            const val = textoParaFloat(c.valor);
+            
+            // SE FOR GANHO
+            if (c.tipo === 'ganho') {
+                countGanhos++;
+                sumGanhos += val;
+                tGanhos.innerHTML += `
+                    <tr>
+                        <td class="fw-bold">${c.dia}</td>
+                        <td>${c.nome} <div class="small text-muted">${c.obs || ''}</div></td>
+                        <td class="texto-positivo">${c.valor}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-info btn-action" onclick="abrirEdicao(${i})"><i class="bi bi-pencil-fill"></i></button>
+                            <button class="btn btn-sm btn-outline-danger btn-action" onclick="removerItem(${i})"><i class="bi bi-trash-fill"></i></button>
+                        </td>
+                    </tr>`;
+            } 
+            // SE FOR DESPESA
+            else {
+                if (!c.pago) {
+                    countPendentes++;
+                    sumPagar += val;
+                    tPendentes.innerHTML += `
+                        <tr>
+                            <td class="fw-bold text-white">${c.dia}</td>
+                            <td>${c.nome} <div class="small text-muted">${c.obs || ''}</div></td>
+                            <td class="text-warning fw-bold">${c.valor}</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-info btn-action" onclick="abrirEdicao(${i})"><i class="bi bi-pencil-fill"></i></button>
+                                <button class="btn btn-sm btn-success btn-action" onclick="alternarStatus(${i})"><i class="bi bi-check-lg"></i></button>
+                                <button class="btn btn-sm btn-outline-danger btn-action" onclick="removerItem(${i})"><i class="bi bi-trash-fill"></i></button>
+                            </td>
+                        </tr>`;
+                } else {
+                    tPagas.innerHTML += `
+                        <tr class="riscado">
+                            <td>${c.dia}</td>
+                            <td>${c.nome}</td>
+                            <td>${c.valor}</td>
+                            <td class="texto-data-pago">${c.data_pagamento || '-'}</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary btn-action" onclick="alternarStatus(${i})"><i class="bi bi-arrow-counterclockwise"></i></button>
+                                <button class="btn btn-sm btn-outline-secondary btn-action" onclick="removerItem(${i})"><i class="bi bi-x-lg"></i></button>
+                            </td>
+                        </tr>`;
+                }
+            }
+        });
+
+        // Atualiza Badges de Totais
+        document.getElementById('totalGanhos').innerText = `Total: R$ ${sumGanhos.toFixed(2).replace('.',',')}`;
+        document.getElementById('totalPagar').innerText = `Total: R$ ${sumPagar.toFixed(2).replace('.',',')}`;
+
+        // Mostra msg se vazio
+        document.getElementById('msgVazioGanhos').style.display = countGanhos ? 'none' : 'block';
+        document.getElementById('msgVazioPendentes').style.display = countPendentes ? 'none' : 'block';
+    }
+
+    // --- FUNÇÕES DE ADICIONAR ---
+
+    function formatarDinheiro(val) {
+        val = val.replace('R$', '').trim();
+        return "R$ " + val;
+    }
+
+    function adicionarDespesa() {
         const nome = document.getElementById('novoNome').value;
         const dia = parseInt(document.getElementById('novoDia').value);
         let valor = document.getElementById('novoValor').value;
         const obs = document.getElementById('novaObs').value;
 
-        if (!nome || !dia || !valor) return alert("Preencha os dados!");
-        valor = "R$ " + valor.replace('R$', '').trim();
-
-        dadosAtuais.push({ nome, dia, valor, obs, pago: false });
+        if (!nome || !dia || !valor) return alert("Preencha os campos!");
+        
+        dadosAtuais.push({ nome, dia, valor: formatarDinheiro(valor), obs, pago: false, tipo: 'despesa' });
         renderizarTudo();
         
         document.getElementById('novoNome').value = "";
         document.getElementById('novoValor').value = "";
         document.getElementById('novaObs').value = "";
-        alert("Adicionado! Salve para confirmar.");
-        
-        const triggerEl = document.querySelector('button[data-bs-target="#tab-pagar"]');
-        bootstrap.Tab.getInstance(triggerEl).show();
     }
 
-    function removerConta(i) {
-        if(confirm("Tem certeza que deseja excluir esta conta?")) {
+    function adicionarGanho() {
+        const nome = document.getElementById('ganhoNome').value;
+        const dia = parseInt(document.getElementById('ganhoDia').value);
+        let valor = document.getElementById('ganhoValor').value;
+        const obs = document.getElementById('ganhoObs').value;
+
+        if (!nome || !dia || !valor) return alert("Preencha os campos do ganho!");
+
+        // Aqui adicionamos o tipo: 'ganho'
+        dadosAtuais.push({ nome, dia, valor: formatarDinheiro(valor), obs, tipo: 'ganho' });
+        renderizarTudo();
+
+        document.getElementById('ganhoNome').value = "";
+        document.getElementById('ganhoValor').value = "";
+        document.getElementById('ganhoObs').value = "";
+        modalGanhoBS.hide();
+    }
+
+    function removerItem(i) {
+        if(confirm("Tem certeza que deseja apagar?")) {
             dadosAtuais.splice(i, 1);
             renderizarTudo();
         }
@@ -424,11 +542,10 @@
     function salvarEdicao() {
         const i = document.getElementById('editIndex').value;
         let val = document.getElementById('editValor').value;
-        val = "R$ " + val.replace('R$', '').trim();
 
         dadosAtuais[i].nome = document.getElementById('editNome').value;
         dadosAtuais[i].dia = parseInt(document.getElementById('editDia').value);
-        dadosAtuais[i].valor = val;
+        dadosAtuais[i].valor = formatarDinheiro(val);
         dadosAtuais[i].obs = document.getElementById('editObs').value;
         modalEdicaoBS.hide();
         renderizarTudo();
@@ -437,30 +554,30 @@
     async function salvarNoGithub() {
         const btn = document.getElementById('btnSalvar');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sincronizando...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Salvando...';
 
         try {
             const jsonStr = JSON.stringify(dadosAtuais, null, 2);
             const contentBase64 = window.btoa(unescape(encodeURIComponent(jsonStr)));
-            const body = { message: "App Mobile Update", content: contentBase64, sha: shaArquivo };
+            const body = { message: "Update via Panel (Com Ganhos)", content: contentBase64, sha: shaArquivo };
 
             const resp = await fetch(API_URL, {
                 method: 'PUT',
-                headers: { 'Authorization': `token ${userToken}`, 'Content-Type': 'application/json' },
+                headers: { 'Authorization': `token ${TOKEN}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
 
             if (resp.ok) {
-                alert("✅ Sincronizado com Sucesso!");
+                alert("✅ Sucesso!");
                 location.reload();
             } else { throw new Error("Erro GitHub"); }
         } catch (e) {
-            alert("Erro ao salvar. Verifique conexão.");
+            console.error(e);
+            alert("❌ Erro ao salvar!");
             btn.disabled = false;
             btn.innerText = "💾 TENTAR NOVAMENTE";
         }
     }
 </script>
 </body>
-        </html>
-        
+</html>
