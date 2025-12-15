@@ -474,7 +474,7 @@
             } else {
                 if(!c.pago) {
                     sPagar += val; cPend++;
-                    tPendentes.innerHTML += `<tr><td class="fw-bold fs-5 text-white">${c.dia}</td><td>${iconeRecorrente}${c.nome} <br><small class="text-muted">${c.obs||''}</small></td><td class="texto-negativo">${c.valor}</td><td class="text-end"><button class="btn btn-sm btn-outline-info btn-action" onclick="abrirEdicao(${i})"><i class="bi bi-pencil-fill"></i></button><button class="btn btn-sm btn-success btn-action" onclick="alternarStatus(${i})"><i class="bi bi-check-lg"></i></button><button class="btn btn-sm btn-outline-danger btn-action" onclick="removerItem(${i})"><i class="bi bi-trash-fill"></i></button></td></tr>`;
+                    tPendentes.innerHTML += `<tr><td class="fw-bold fs-5">${c.dia}</td><td>${iconeRecorrente}${c.nome} <br><small class="text-muted">${c.obs||''}</small></td><td class="texto-negativo">${c.valor}</td><td class="text-end"><button class="btn btn-sm btn-outline-info btn-action" onclick="abrirEdicao(${i})"><i class="bi bi-pencil-fill"></i></button><button class="btn btn-sm btn-success btn-action" onclick="alternarStatus(${i})"><i class="bi bi-check-lg"></i></button><button class="btn btn-sm btn-outline-danger btn-action" onclick="removerItem(${i})"><i class="bi bi-trash-fill"></i></button></td></tr>`;
                 } else {
                     sHistorico += val;
                     tPagas.innerHTML += `
