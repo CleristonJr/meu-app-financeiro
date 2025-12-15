@@ -42,7 +42,6 @@
             transition: all 0.3s ease;
         }
 
-        /* TÍTULO PRINCIPAL ADAPTÁVEL */
         .titulo-principal { color: #fff; transition: color 0.3s; }
         [data-bs-theme="light"] .titulo-principal { color: var(--bs-secondary-color) !important; }
 
@@ -104,26 +103,11 @@
         .texto-positivo { color: #00ff88; font-weight: bold; }
         .texto-negativo { color: #ff4d4d; font-weight: bold; }
         
-        /* --- CORES DO SALDO (Ajuste Solicitado) --- */
-        .saldo-box {
-            font-size: 1.5rem;
-            font-weight: 800;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-        }
-        
-        /* Padrão (Dark Mode) - Cores Neon */
+        .saldo-box { font-size: 1.5rem; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
         .saldo-verde { color: #00ff88; }
         .saldo-vermelho { color: #ff4d4d; }
-
-        /* Modo Claro - Cores Escuras (Iguais à mensagem Bootstrap) */
-        [data-bs-theme="light"] .saldo-verde { 
-            color: #198754 !important; /* Verde Success Bootstrap */
-            text-shadow: none;
-        }
-        [data-bs-theme="light"] .saldo-vermelho { 
-            color: #dc3545 !important; /* Vermelho Danger Bootstrap */
-            text-shadow: none;
-        }
+        [data-bs-theme="light"] .saldo-verde { color: #198754 !important; text-shadow: none; }
+        [data-bs-theme="light"] .saldo-vermelho { color: #dc3545 !important; text-shadow: none; }
 
         @media (max-width: 768px) {
             .btn-action { padding: 4px 8px; }
@@ -166,7 +150,7 @@
     <div class="card p-3 border-0">
         <div class="row align-items-center">
             <div class="col-md-8">
-                <div class="text-center text-md-start mb-2 fs-5 fw-bold text-secondary">📊 Fluxo de Despesas</div>
+                <div class="text-center text-md-start mb-2 fs-5 fw-bold text-secondary">📊 Fluxo de Despesas 3D</div>
                 <div style="height: 280px; width: 100%;">
                     <canvas id="graficoDias"></canvas>
                 </div>
@@ -255,9 +239,16 @@
                     <div class="col-6"><label class="small text-muted">Valor</label><input type="text" id="novoValor" class="form-control" placeholder="R$ 0,00"></div>
                 </div>
                 <div class="mb-3"><label class="small text-muted">Observação</label><input type="text" id="novaObs" class="form-control"></div>
-                <div class="form-check form-switch p-2 border rounded bg-opacity-10 bg-secondary">
-                    <input class="form-check-input" type="checkbox" id="novoPago" style="margin-left: 0.5em; cursor: pointer;">
-                    <label class="form-check-label fw-bold ms-2" for="novoPago">Já está pago?</label>
+                
+                <div class="d-flex gap-2">
+                    <div class="form-check form-switch p-2 border rounded bg-opacity-10 bg-secondary flex-fill">
+                        <input class="form-check-input" type="checkbox" id="novoPago" style="margin-left: 0.5em; cursor: pointer;">
+                        <label class="form-check-label fw-bold ms-2" for="novoPago">Já pago?</label>
+                    </div>
+                    <div class="form-check form-switch p-2 border rounded bg-opacity-10 bg-info flex-fill">
+                        <input class="form-check-input" type="checkbox" id="novoRecorrente" style="margin-left: 0.5em; cursor: pointer;">
+                        <label class="form-check-label fw-bold ms-2" for="novoRecorrente">🔁 Recorrente?</label>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer border-0">
@@ -296,6 +287,10 @@
                     <div class="col-6"><label class="small text-muted">Valor</label><input type="text" id="editValor" class="form-control"></div>
                 </div>
                 <div class="mb-2"><label class="small text-muted">Obs</label><input type="text" id="editObs" class="form-control"></div>
+                <div class="form-check form-switch p-2 border rounded bg-opacity-10 bg-info mt-2">
+                    <input class="form-check-input" type="checkbox" id="editRecorrente" style="margin-left: 0.5em; cursor: pointer;">
+                    <label class="form-check-label fw-bold ms-2" for="editRecorrente">🔁 Despesa Recorrente?</label>
+                </div>
             </div>
             <div class="modal-footer border-0"><button onclick="salvarEdicao()" class="btn btn-primary w-100 fw-bold">Salvar Alterações</button></div>
         </div>
@@ -303,19 +298,15 @@
 </div>
 
 <script>
-    // --- CONFIGURAÇÃO ---
+    // --- CONFIG ---
     const USUARIO = "CleristonJr";
     const REPOSITORIO = "ContasAPagar";
-    // --------------------
-
     let TOKEN = localStorage.getItem('github_token') || "";
     const API_URL = `https://api.github.com/repos/${USUARIO}/${REPOSITORIO}/contents/contas.json`;
     let dadosAtuais = [];
     let shaArquivo = "";
-    let modalEdicaoBS, modalGanhoBS, modalDespesaBS;
-    let meuGrafico = null; 
+    let modalEdicaoBS, modalGanhoBS, modalDespesaBS, meuGrafico;
 
-    // --- LOGIN ---
     function verificarLogin() {
         if(TOKEN && TOKEN.startsWith('ghp_')) {
             document.getElementById('loginScreen').style.display = 'none';
@@ -337,7 +328,6 @@
         if(confirm("Sair?")) { localStorage.removeItem('github_token'); location.reload(); }
     }
 
-    // --- INIT ---
     window.onload = function() {
         const tema = localStorage.getItem('tema') || 'dark';
         document.documentElement.setAttribute('data-bs-theme', tema);
@@ -361,9 +351,38 @@
         if(meuGrafico) atualizarGrafico();
     }
 
-    // --- DADOS ---
     function fmtDinheiro(v) { return "R$ " + v.replace('R$', '').trim(); }
     function strToFloat(v) { return parseFloat(v.replace('R$','').replaceAll('.','').replace(',','.')) || 0; }
+
+    // --- NOVA LÓGICA DE RECORRÊNCIA ---
+    function verificarRecorrencia() {
+        const hoje = new Date();
+        const mesAtual = hoje.getMonth(); // 0-11
+        const anoAtual = hoje.getFullYear();
+        let houveMudanca = false;
+
+        dadosAtuais.forEach(conta => {
+            // Se for recorrente, estiver pago e tiver data de pagamento
+            if (conta.recorrente && conta.pago && conta.data_pagamento) {
+                const partes = conta.data_pagamento.split('/');
+                // partes[0] = dia, partes[1] = mes, partes[2] = ano
+                const dataPagamento = new Date(partes[2], partes[1] - 1, partes[0]);
+
+                // Se o mês do pagamento for anterior ao atual (ou ano anterior)
+                // Significa que virou o mês e a conta deve voltar a ficar pendente
+                if (dataPagamento.getMonth() < mesAtual || dataPagamento.getFullYear() < anoAtual) {
+                    conta.pago = false;
+                    delete conta.data_pagamento; // Limpa a data de pagamento
+                    houveMudanca = true;
+                }
+            }
+        });
+        
+        // Se houve reset, apenas renderizamos. O usuário salva quando clicar no botão.
+        if (houveMudanca) {
+            console.log("Contas recorrentes resetadas para o novo mês.");
+        }
+    }
 
     async function carregarDados() {
         try {
@@ -372,6 +391,10 @@
             const json = await resp.json();
             dadosAtuais = JSON.parse(decodeURIComponent(escape(atob(json.content))));
             shaArquivo = json.sha;
+            
+            // Verifica recorrência assim que carrega
+            verificarRecorrencia();
+            
             renderizarTudo();
         } catch (e) { console.error(e); alert("Erro ao carregar dados."); }
     }
@@ -390,6 +413,8 @@
 
         dadosAtuais.forEach((c, i) => {
             const val = strToFloat(c.valor);
+            // Ícone de recorrência
+            const iconeRecorrente = c.recorrente ? '<span title="Recorrente">🔁</span> ' : '';
             
             if(c.tipo === 'ganho') {
                 sGanhos += val; cGanhos++;
@@ -397,10 +422,10 @@
             } else {
                 if(!c.pago) {
                     sPagar += val; cPend++;
-                    tPendentes.innerHTML += `<tr><td class="fw-bold fs-5 text-white">${c.dia}</td><td>${c.nome} <br><small class="text-muted">${c.obs||''}</small></td><td class="texto-negativo">${c.valor}</td><td class="text-end"><button class="btn btn-sm btn-outline-info btn-action" onclick="abrirEdicao(${i})"><i class="bi bi-pencil-fill"></i></button><button class="btn btn-sm btn-success btn-action" onclick="alternarStatus(${i})"><i class="bi bi-check-lg"></i></button><button class="btn btn-sm btn-outline-danger btn-action" onclick="removerItem(${i})"><i class="bi bi-trash-fill"></i></button></td></tr>`;
+                    tPendentes.innerHTML += `<tr><td class="fw-bold fs-5 text-white">${c.dia}</td><td>${iconeRecorrente}${c.nome} <br><small class="text-muted">${c.obs||''}</small></td><td class="texto-negativo">${c.valor}</td><td class="text-end"><button class="btn btn-sm btn-outline-info btn-action" onclick="abrirEdicao(${i})"><i class="bi bi-pencil-fill"></i></button><button class="btn btn-sm btn-success btn-action" onclick="alternarStatus(${i})"><i class="bi bi-check-lg"></i></button><button class="btn btn-sm btn-outline-danger btn-action" onclick="removerItem(${i})"><i class="bi bi-trash-fill"></i></button></td></tr>`;
                 } else {
                     sHistorico += val;
-                    tPagas.innerHTML += `<tr class="riscado"><td>${c.dia}</td><td>${c.nome}</td><td>${c.valor}</td><td class="text-end"><button class="btn btn-sm btn-outline-secondary btn-action" onclick="alternarStatus(${i})"><i class="bi bi-arrow-counterclockwise"></i></button></td></tr>`;
+                    tPagas.innerHTML += `<tr class="riscado"><td>${c.dia}</td><td>${iconeRecorrente}${c.nome}</td><td>${c.valor}</td><td class="text-end"><button class="btn btn-sm btn-outline-secondary btn-action" onclick="alternarStatus(${i})"><i class="bi bi-arrow-counterclockwise"></i></button></td></tr>`;
                 }
             }
         });
@@ -413,7 +438,6 @@
         const divSaldo = document.getElementById('displaySaldo');
         divSaldo.innerText = "R$ " + saldo.toFixed(2).replace('.',',');
         
-        // Lógica de Cor do Saldo (Atualizada)
         const msg = document.getElementById('msgSaldo');
         if(saldo >= 0) {
             divSaldo.className = "saldo-box saldo-verde";
@@ -431,41 +455,22 @@
         atualizarGrafico();
     }
 
-    // --- PLUGIN CHART.JS 3D ---
+    // PLUGIN 3D CHART.JS
     const plugin3D = {
         id: 'custom3D',
         beforeDatasetsDraw(chart, args, options) {
             const { ctx } = chart;
-            const depthX = 15; // Profundidade
-            const depthY = 10; 
-
+            const depthX = 15; const depthY = 10; 
             chart.data.datasets.forEach((dataset, i) => {
                 const meta = chart.getDatasetMeta(i);
                 meta.data.forEach((bar, index) => {
                     const { x, y, width, height, base } = bar;
-                    const sideColor = dataset.borderColor === '#22c55e' 
-                        ? 'rgba(34, 197, 94, 0.4)'  
-                        : 'rgba(239, 68, 68, 0.4)'; 
-
-                    ctx.fillStyle = sideColor;
-                    ctx.strokeStyle = dataset.borderColor;
-                    ctx.lineWidth = 1;
-                    
+                    const sideColor = dataset.borderColor === '#22c55e' ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)'; 
+                    ctx.fillStyle = sideColor; ctx.strokeStyle = dataset.borderColor; ctx.lineWidth = 1;
                     // Topo
-                    ctx.beginPath();
-                    ctx.moveTo(x - width/2, y);
-                    ctx.lineTo(x + width/2, y);
-                    ctx.lineTo(x + width/2 + depthX, y - depthY);
-                    ctx.lineTo(x - width/2 + depthX, y - depthY);
-                    ctx.closePath(); ctx.fill(); ctx.stroke();
-
+                    ctx.beginPath(); ctx.moveTo(x - width/2, y); ctx.lineTo(x + width/2, y); ctx.lineTo(x + width/2 + depthX, y - depthY); ctx.lineTo(x - width/2 + depthX, y - depthY); ctx.closePath(); ctx.fill(); ctx.stroke();
                     // Lateral
-                    ctx.beginPath();
-                    ctx.moveTo(x + width/2, y);
-                    ctx.lineTo(x + width/2 + depthX, y - depthY);
-                    ctx.lineTo(x + width/2 + depthX, base - depthY);
-                    ctx.lineTo(x + width/2, base);
-                    ctx.closePath(); ctx.fill(); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(x + width/2, y); ctx.lineTo(x + width/2 + depthX, y - depthY); ctx.lineTo(x + width/2 + depthX, base - depthY); ctx.lineTo(x + width/2, base); ctx.closePath(); ctx.fill(); ctx.stroke();
                 });
             });
         }
@@ -474,7 +479,6 @@
     function atualizarGrafico() {
         const ctx = document.getElementById('graficoDias').getContext('2d');
         const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-        
         if(meuGrafico) meuGrafico.destroy();
 
         const resumo = {};
@@ -489,11 +493,8 @@
         const dataPagos = dias.map(d => resumo[d].pago);
         const dataFalta = dias.map(d => resumo[d].total - resumo[d].pago);
 
-        // Degradês
-        const gradPago = ctx.createLinearGradient(0, 0, 0, 300);
-        gradPago.addColorStop(0, 'rgba(34, 197, 94, 0.8)'); gradPago.addColorStop(1, 'rgba(34, 197, 94, 0.2)');
-        const gradFalta = ctx.createLinearGradient(0, 0, 0, 300);
-        gradFalta.addColorStop(0, 'rgba(239, 68, 68, 0.8)'); gradFalta.addColorStop(1, 'rgba(239, 68, 68, 0.2)');
+        const gradPago = ctx.createLinearGradient(0, 0, 0, 300); gradPago.addColorStop(0, 'rgba(34, 197, 94, 0.8)'); gradPago.addColorStop(1, 'rgba(34, 197, 94, 0.2)');
+        const gradFalta = ctx.createLinearGradient(0, 0, 0, 300); gradFalta.addColorStop(0, 'rgba(239, 68, 68, 0.8)'); gradFalta.addColorStop(1, 'rgba(239, 68, 68, 0.2)');
 
         Chart.defaults.color = isDark ? '#bbb' : '#333';
         Chart.defaults.borderColor = isDark ? '#444' : '#ddd';
@@ -507,44 +508,76 @@
                     { label: 'Falta', data: dataFalta, backgroundColor: gradFalta, borderColor: '#ef4444', borderWidth: 1, barPercentage: 0.7, stack: '0' }
                 ]
             },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                layout: { padding: { top: 20, right: 20 } },
-                scales: { x: { grid: { display: false } }, y: { beginAtZero: true, border: { display: false } } },
-                plugins: {
-                    tooltip: {
-                        mode: 'index', intersect: false,
-                        backgroundColor: 'rgba(0,0,0,0.8)', titleColor: '#fff', bodyColor: '#fff',
-                        callbacks: { footer: (items) => { let total = 0; items.forEach((i) => total += i.parsed.y); return 'Total: R$ ' + total.toFixed(2).replace('.',','); } }
-                    },
-                    legend: { labels: { usePointStyle: true } }
-                }
-            },
+            options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 20, right: 20 } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, border: { display: false } } }, plugins: { tooltip: { mode: 'index', intersect: false, backgroundColor: 'rgba(0,0,0,0.8)', titleColor: '#fff', bodyColor: '#fff', callbacks: { footer: (items) => { let total = 0; items.forEach((i) => total += i.parsed.y); return 'Total: R$ ' + total.toFixed(2).replace('.',','); } } }, legend: { labels: { usePointStyle: true } } } },
             plugins: [plugin3D]
         });
     }
 
-    // --- CRUD ---
+    // --- CRUD ATUALIZADO ---
     function adicionarDespesa() {
         const n = document.getElementById('novoNome').value, d = document.getElementById('novoDia').value, v = document.getElementById('novoValor').value, o = document.getElementById('novaObs').value;
         const jaPago = document.getElementById('novoPago').checked;
+        const ehRecorrente = document.getElementById('novoRecorrente').checked;
+        
         if(!n || !d || !v) return alert("Preencha tudo!");
-        const novaConta = { nome:n, dia:parseInt(d), valor:fmtDinheiro(v), obs:o, pago: jaPago, tipo:'despesa' };
+        
+        const novaConta = { 
+            nome:n, dia:parseInt(d), valor:fmtDinheiro(v), obs:o, 
+            pago: jaPago, 
+            recorrente: ehRecorrente, // Salva se é recorrente
+            tipo:'despesa' 
+        };
         if(jaPago) novaConta.data_pagamento = new Date().toLocaleDateString('pt-BR');
-        dadosAtuais.push(novaConta); renderizarTudo(); limpaForm('novo');
-        document.getElementById('novoPago').checked = false; document.getElementById('novoDia').value = new Date().getDate(); modalDespesaBS.hide();
+
+        dadosAtuais.push(novaConta);
+        renderizarTudo(); limpaForm('novo');
+        document.getElementById('novoPago').checked = false;
+        document.getElementById('novoRecorrente').checked = false;
+        document.getElementById('novoDia').value = new Date().getDate();
+        modalDespesaBS.hide();
     }
+
     function adicionarGanho() {
         const n = document.getElementById('ganhoNome').value, d = document.getElementById('ganhoDia').value, v = document.getElementById('ganhoValor').value, o = document.getElementById('ganhoObs').value;
         if(!n || !d || !v) return alert("Preencha tudo!");
         dadosAtuais.push({ nome:n, dia:parseInt(d), valor:fmtDinheiro(v), obs:o, tipo:'ganho' });
         renderizarTudo(); limpaForm('ganho'); modalGanhoBS.hide(); document.getElementById('ganhoDia').value = new Date().getDate();
     }
+
     function limpaForm(p) { document.getElementById(p+'Nome').value=""; document.getElementById(p+'Valor').value=""; document.getElementById(p+'Obs').value=""; }
     function removerItem(i) { if(confirm("Apagar?")) { dadosAtuais.splice(i,1); renderizarTudo(); } }
-    function alternarStatus(i) { dadosAtuais[i].pago = !dadosAtuais[i].pago; dadosAtuais[i].data_pagamento = dadosAtuais[i].pago ? new Date().toLocaleDateString('pt-BR') : undefined; renderizarTudo(); }
-    function abrirEdicao(i) { const c = dadosAtuais[i]; document.getElementById('editIndex').value=i; document.getElementById('editNome').value=c.nome; document.getElementById('editDia').value=c.dia; document.getElementById('editValor').value=c.valor; document.getElementById('editObs').value=c.obs||''; modalEdicaoBS.show(); }
-    function salvarEdicao() { const i = document.getElementById('editIndex').value; dadosAtuais[i].nome = document.getElementById('editNome').value; dadosAtuais[i].dia = parseInt(document.getElementById('editDia').value); dadosAtuais[i].valor = fmtDinheiro(document.getElementById('editValor').value); dadosAtuais[i].obs = document.getElementById('editObs').value; modalEdicaoBS.hide(); renderizarTudo(); }
+    
+    function alternarStatus(i) {
+        dadosAtuais[i].pago = !dadosAtuais[i].pago;
+        dadosAtuais[i].data_pagamento = dadosAtuais[i].pago ? new Date().toLocaleDateString('pt-BR') : undefined;
+        renderizarTudo();
+    }
+
+    function abrirEdicao(i) {
+        const c = dadosAtuais[i];
+        document.getElementById('editIndex').value=i; 
+        document.getElementById('editNome').value=c.nome;
+        document.getElementById('editDia').value=c.dia; 
+        document.getElementById('editValor').value=c.valor;
+        document.getElementById('editObs').value=c.obs||''; 
+        // Carrega status recorrente
+        document.getElementById('editRecorrente').checked = c.recorrente || false;
+        
+        modalEdicaoBS.show();
+    }
+
+    function salvarEdicao() {
+        const i = document.getElementById('editIndex').value;
+        dadosAtuais[i].nome = document.getElementById('editNome').value;
+        dadosAtuais[i].dia = parseInt(document.getElementById('editDia').value);
+        dadosAtuais[i].valor = fmtDinheiro(document.getElementById('editValor').value);
+        dadosAtuais[i].obs = document.getElementById('editObs').value;
+        // Salva recorrência editada
+        dadosAtuais[i].recorrente = document.getElementById('editRecorrente').checked;
+        
+        modalEdicaoBS.hide(); renderizarTudo();
+    }
+
     async function salvarNoGithub() { const btn = document.getElementById('btnSalvar'); btn.disabled=true; btn.innerText="Salvando..."; try { const body = { message: "Update via App", content: btoa(unescape(encodeURIComponent(JSON.stringify(dadosAtuais,null,2)))), sha: shaArquivo }; const r = await fetch(API_URL, { method:'PUT', headers:{'Authorization':`token ${TOKEN}`, 'Content-Type':'application/json'}, body:JSON.stringify(body) }); if(r.ok) { alert("✅ Sucesso!"); location.reload(); } else throw new Error(); } catch { alert("Erro ao salvar! Verifique conexão/token."); btn.disabled=false; btn.innerText="💾 TENTAR NOVAMENTE"; } }
 </script>
 </body>
