@@ -118,6 +118,10 @@
         [data-bs-theme="light"] .saldo-verde { color: #198754 !important; text-shadow: none; }
         [data-bs-theme="light"] .saldo-vermelho { color: #dc3545 !important; text-shadow: none; }
 
+        /* CORREÇÃO DO TOTAL HISTÓRICO NO TEMA CLARO */
+        .texto-historico { color: #e0e0e0; } /* Padrão Dark (Claro) */
+        [data-bs-theme="light"] .texto-historico { color: #212529 !important; font-weight: bold; } /* Padrão Light (Escuro) */
+
         /* BOTÃO DE LIMPAR */
         .btn-limpar {
             padding: 2px 8px;
@@ -235,8 +239,8 @@
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h5 class="text-secondary fw-bold m-0"><i class="bi bi-check2-circle"></i> Histórico</h5>
                     <div>
-                        <span class="badge bg-secondary bg-opacity-25 text-light border border-secondary me-2" id="totalHistorico">R$ 0,00</span>
-                        <button onclick="limparHistoricoAntigo()" class="btn btn-outline-secondary btn-limpar" title="Apagar pagos de meses anteriores (não recorrentes)">🧹 Limpar Antigos</button>
+                        <span class="badge bg-secondary bg-opacity-25 texto-historico border border-secondary me-2" id="totalHistorico">R$ 0,00</span>
+                        <button onclick="limparHistoricoAntigo()" class="btn btn-outline-secondary btn-limpar" title="Apagar pagos de meses anteriores">🧹 Limpar Antigos</button>
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -322,7 +326,7 @@
                 <div class="mb-2"><label class="small text-muted">Obs</label><input type="text" id="editObs" class="form-control"></div>
                 <div class="form-check form-switch p-2 border rounded bg-opacity-10 bg-info mt-2">
                     <input class="form-check-input" type="checkbox" id="editRecorrente" style="margin-left: 0.5em; cursor: pointer;">
-                    <label class="form-check-label fw-bold ms-2" for="editRecorrente">🔁 Recorrente?</label>
+                    <label class="form-check-label fw-bold ms-2" for="editRecorrente">🔁 Despesa Recorrente?</label>
                 </div>
             </div>
             <div class="modal-footer border-0"><button onclick="salvarEdicao()" class="btn btn-primary w-100 fw-bold">Salvar Alterações</button></div>
@@ -397,7 +401,6 @@
             if (conta.recorrente && conta.pago && conta.data_pagamento) {
                 const partes = conta.data_pagamento.split('/');
                 const dataPagamento = new Date(partes[2], partes[1] - 1, partes[0]);
-                // Se pagou no mês passado ou antes, volta a ser pendente
                 if (dataPagamento.getMonth() < mesAtual || dataPagamento.getFullYear() < anoAtual) {
                     conta.pago = false;
                     delete conta.data_pagamento;
@@ -407,35 +410,27 @@
         });
     }
 
-    // --- FUNÇÕES DE LIMPEZA (NOVAS) ---
     function limparNaoRecorrentes(tipo) {
-        if(!confirm(`Deseja apagar todos os itens ${tipo === 'despesa' ? 'A PAGAR' : 'DE ENTRADA'} que NÃO SÃO recorrentes?`)) return;
-        
-        // Mantém apenas os que (são de outro tipo) OU (são recorrentes) OU (já estão pagos, se for despesa)
+        if(!confirm(`Apagar ${tipo === 'despesa' ? 'A PAGAR' : 'GANHOS'} não recorrentes?`)) return;
         dadosAtuais = dadosAtuais.filter(item => {
             if (item.tipo === tipo) {
-                if(tipo === 'despesa' && item.pago) return true; // Não apaga o que já foi pago aqui (isso é com o histórico)
-                return item.recorrente === true; // Só mantém se for recorrente
+                if(tipo === 'despesa' && item.pago) return true; 
+                return item.recorrente === true; 
             }
-            return true; // Mantém os outros tipos
+            return true; 
         });
         renderizarTudo();
     }
 
     function limparHistoricoAntigo() {
-        if(!confirm("Deseja limpar do histórico contas pagas de MESES ANTERIORES que NÃO SÃO recorrentes?")) return;
-        
+        if(!confirm("Limpar pagos de MESES ANTERIORES não recorrentes?")) return;
         const hoje = new Date();
         const mesAtual = hoje.getMonth();
         const anoAtual = hoje.getFullYear();
-
         dadosAtuais = dadosAtuais.filter(item => {
-            // Se for conta paga, não recorrente e tiver data
             if (item.pago && !item.recorrente && item.data_pagamento) {
                 const partes = item.data_pagamento.split('/');
                 const dataPag = new Date(partes[2], partes[1]-1, partes[0]);
-                
-                // Se for mês anterior, remove (retorna false)
                 if (dataPag.getMonth() < mesAtual || dataPag.getFullYear() < anoAtual) {
                     return false; 
                 }
@@ -452,7 +447,6 @@
             const json = await resp.json();
             dadosAtuais = JSON.parse(decodeURIComponent(escape(atob(json.content))));
             shaArquivo = json.sha;
-            
             verificarRecorrencia();
             renderizarTudo();
         } catch (e) { console.error(e); alert("Erro ao carregar dados."); }
@@ -524,7 +518,6 @@
         atualizarGrafico();
     }
 
-    // PLUGIN 3D
     const plugin3D = {
         id: 'custom3D',
         beforeDatasetsDraw(chart, args, options) {
@@ -580,45 +573,23 @@
         });
     }
 
-    // --- CRUD ---
     function adicionarDespesa() {
         const n = document.getElementById('novoNome').value, d = document.getElementById('novoDia').value, v = document.getElementById('novoValor').value, o = document.getElementById('novaObs').value;
         const jaPago = document.getElementById('novoPago').checked;
         const ehRecorrente = document.getElementById('novoRecorrente').checked;
-        
         if(!n || !d || !v) return alert("Preencha tudo!");
-        
-        const novaConta = { 
-            nome:n, dia:parseInt(d), valor:fmtDinheiro(v), obs:o, 
-            pago: jaPago, 
-            recorrente: ehRecorrente, 
-            tipo:'despesa' 
-        };
+        const novaConta = { nome:n, dia:parseInt(d), valor:fmtDinheiro(v), obs:o, pago: jaPago, recorrente: ehRecorrente, tipo:'despesa' };
         if(jaPago) novaConta.data_pagamento = new Date().toLocaleDateString('pt-BR');
-
-        dadosAtuais.push(novaConta);
-        renderizarTudo(); limpaForm('novo');
-        document.getElementById('novoPago').checked = false;
-        document.getElementById('novoRecorrente').checked = false;
-        document.getElementById('novoDia').value = new Date().getDate();
-        modalDespesaBS.hide();
+        dadosAtuais.push(novaConta); renderizarTudo(); limpaForm('novo');
+        document.getElementById('novoPago').checked = false; document.getElementById('novoRecorrente').checked = false; document.getElementById('novoDia').value = new Date().getDate(); modalDespesaBS.hide();
     }
 
     function adicionarGanho() {
         const n = document.getElementById('ganhoNome').value, d = document.getElementById('ganhoDia').value, v = document.getElementById('ganhoValor').value, o = document.getElementById('ganhoObs').value;
         const ehRecorrente = document.getElementById('ganhoRecorrente').checked;
-        
         if(!n || !d || !v) return alert("Preencha tudo!");
-        
-        dadosAtuais.push({ 
-            nome:n, dia:parseInt(d), valor:fmtDinheiro(v), obs:o, 
-            recorrente: ehRecorrente,
-            tipo:'ganho' 
-        });
-        renderizarTudo(); limpaForm('ganho'); 
-        document.getElementById('ganhoRecorrente').checked = false;
-        document.getElementById('ganhoDia').value = new Date().getDate();
-        modalGanhoBS.hide(); 
+        dadosAtuais.push({ nome:n, dia:parseInt(d), valor:fmtDinheiro(v), obs:o, recorrente: ehRecorrente, tipo:'ganho' });
+        renderizarTudo(); limpaForm('ganho'); document.getElementById('ganhoRecorrente').checked = false; document.getElementById('ganhoDia').value = new Date().getDate(); modalGanhoBS.hide(); 
     }
 
     function limpaForm(p) { document.getElementById(p+'Nome').value=""; document.getElementById(p+'Valor').value=""; document.getElementById(p+'Obs').value=""; }
@@ -638,7 +609,6 @@
         document.getElementById('editValor').value=c.valor;
         document.getElementById('editObs').value=c.obs||''; 
         document.getElementById('editRecorrente').checked = c.recorrente || false;
-        
         modalEdicaoBS.show();
     }
 
@@ -649,7 +619,6 @@
         dadosAtuais[i].valor = fmtDinheiro(document.getElementById('editValor').value);
         dadosAtuais[i].obs = document.getElementById('editObs').value;
         dadosAtuais[i].recorrente = document.getElementById('editRecorrente').checked;
-        
         modalEdicaoBS.hide(); renderizarTudo();
     }
 
