@@ -99,10 +99,20 @@
         #tab-ganhos.active { color: #198754 !important; }
         #tab-historico.active { color: #0d6efd !important; }
 
+        /* TABELAS */
+        .table { --bs-table-bg: transparent; color: var(--text-main); }
+        .table thead th { 
+            border-bottom: 2px solid var(--border-color); 
+            color: #888; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .table td { border-bottom: 1px solid var(--border-color); }
+        
         .riscado { text-decoration: line-through; color: #777 !important; }
         .texto-positivo { color: #00ff88; font-weight: bold; }
         .texto-negativo { color: #ff4d4d; font-weight: bold; }
+        .texto-data-pago { color: #0dcaf0; font-size: 0.85rem; font-weight: bold; } /* Azul Ciano */
         
+        /* SALDO */
         .saldo-box { font-size: 1.5rem; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
         .saldo-verde { color: #00ff88; }
         .saldo-vermelho { color: #ff4d4d; }
@@ -110,10 +120,10 @@
         [data-bs-theme="light"] .saldo-vermelho { color: #dc3545 !important; text-shadow: none; }
 
         @media (max-width: 768px) {
-            .btn-action { padding: 4px 8px; }
+            .btn-action { padding: 2px 6px; }
             .theme-toggle { top: 10px; right: 10px; width: 40px; height: 40px; }
             .btn-logout { top: 60px; right: 10px; width: 35px; height: 35px; }
-            .nav-link { font-size: 0.9rem; padding: 8px 10px; }
+            .nav-link { font-size: 0.8rem; padding: 8px 5px; }
         }
     </style>
 </head>
@@ -185,6 +195,7 @@
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle table-sm mb-0">
+                        <thead><tr><th>Dia</th><th>Conta</th><th>Valor</th><th class="text-end">Ações</th></tr></thead>
                         <tbody id="tabelaPendentes"></tbody>
                     </table>
                 </div>
@@ -199,6 +210,7 @@
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle table-sm mb-0">
+                        <thead><tr><th>Dia</th><th>Origem</th><th>Valor</th><th class="text-end">Ações</th></tr></thead>
                         <tbody id="tabelaGanhos"></tbody>
                     </table>
                 </div>
@@ -213,6 +225,7 @@
                 </div>
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0">
+                        <thead><tr><th>Dia</th><th>Conta</th><th>Valor</th><th>Pago Em</th><th class="text-end">Ações</th></tr></thead>
                         <tbody id="tabelaPagas"></tbody>
                     </table>
                 </div>
@@ -354,34 +367,23 @@
     function fmtDinheiro(v) { return "R$ " + v.replace('R$', '').trim(); }
     function strToFloat(v) { return parseFloat(v.replace('R$','').replaceAll('.','').replace(',','.')) || 0; }
 
-    // --- NOVA LÓGICA DE RECORRÊNCIA ---
     function verificarRecorrencia() {
         const hoje = new Date();
-        const mesAtual = hoje.getMonth(); // 0-11
+        const mesAtual = hoje.getMonth(); 
         const anoAtual = hoje.getFullYear();
         let houveMudanca = false;
 
         dadosAtuais.forEach(conta => {
-            // Se for recorrente, estiver pago e tiver data de pagamento
             if (conta.recorrente && conta.pago && conta.data_pagamento) {
                 const partes = conta.data_pagamento.split('/');
-                // partes[0] = dia, partes[1] = mes, partes[2] = ano
                 const dataPagamento = new Date(partes[2], partes[1] - 1, partes[0]);
-
-                // Se o mês do pagamento for anterior ao atual (ou ano anterior)
-                // Significa que virou o mês e a conta deve voltar a ficar pendente
                 if (dataPagamento.getMonth() < mesAtual || dataPagamento.getFullYear() < anoAtual) {
                     conta.pago = false;
-                    delete conta.data_pagamento; // Limpa a data de pagamento
+                    delete conta.data_pagamento;
                     houveMudanca = true;
                 }
             }
         });
-        
-        // Se houve reset, apenas renderizamos. O usuário salva quando clicar no botão.
-        if (houveMudanca) {
-            console.log("Contas recorrentes resetadas para o novo mês.");
-        }
     }
 
     async function carregarDados() {
@@ -392,9 +394,7 @@
             dadosAtuais = JSON.parse(decodeURIComponent(escape(atob(json.content))));
             shaArquivo = json.sha;
             
-            // Verifica recorrência assim que carrega
             verificarRecorrencia();
-            
             renderizarTudo();
         } catch (e) { console.error(e); alert("Erro ao carregar dados."); }
     }
@@ -413,7 +413,6 @@
 
         dadosAtuais.forEach((c, i) => {
             const val = strToFloat(c.valor);
-            // Ícone de recorrência
             const iconeRecorrente = c.recorrente ? '<span title="Recorrente">🔁</span> ' : '';
             
             if(c.tipo === 'ganho') {
@@ -425,7 +424,19 @@
                     tPendentes.innerHTML += `<tr><td class="fw-bold fs-5 text-white">${c.dia}</td><td>${iconeRecorrente}${c.nome} <br><small class="text-muted">${c.obs||''}</small></td><td class="texto-negativo">${c.valor}</td><td class="text-end"><button class="btn btn-sm btn-outline-info btn-action" onclick="abrirEdicao(${i})"><i class="bi bi-pencil-fill"></i></button><button class="btn btn-sm btn-success btn-action" onclick="alternarStatus(${i})"><i class="bi bi-check-lg"></i></button><button class="btn btn-sm btn-outline-danger btn-action" onclick="removerItem(${i})"><i class="bi bi-trash-fill"></i></button></td></tr>`;
                 } else {
                     sHistorico += val;
-                    tPagas.innerHTML += `<tr class="riscado"><td>${c.dia}</td><td>${iconeRecorrente}${c.nome}</td><td>${c.valor}</td><td class="text-end"><button class="btn btn-sm btn-outline-secondary btn-action" onclick="alternarStatus(${i})"><i class="bi bi-arrow-counterclockwise"></i></button></td></tr>`;
+                    // HISTÓRICO COM BOTÃO EDITAR E DATA
+                    tPagas.innerHTML += `
+                        <tr class="riscado">
+                            <td>${c.dia}</td>
+                            <td>${iconeRecorrente}${c.nome}</td>
+                            <td>${c.valor}</td>
+                            <td class="texto-data-pago">${c.data_pagamento || '-'}</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-info btn-action" onclick="abrirEdicao(${i})" title="Editar"><i class="bi bi-pencil"></i></button>
+                                <button class="btn btn-sm btn-outline-secondary btn-action" onclick="alternarStatus(${i})" title="Voltar"><i class="bi bi-arrow-counterclockwise"></i></button>
+                                <button class="btn btn-sm btn-outline-danger btn-action" onclick="removerItem(${i})" title="Excluir"><i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>`;
                 }
             }
         });
@@ -455,7 +466,7 @@
         atualizarGrafico();
     }
 
-    // PLUGIN 3D CHART.JS
+    // PLUGIN 3D
     const plugin3D = {
         id: 'custom3D',
         beforeDatasetsDraw(chart, args, options) {
@@ -467,9 +478,7 @@
                     const { x, y, width, height, base } = bar;
                     const sideColor = dataset.borderColor === '#22c55e' ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)'; 
                     ctx.fillStyle = sideColor; ctx.strokeStyle = dataset.borderColor; ctx.lineWidth = 1;
-                    // Topo
                     ctx.beginPath(); ctx.moveTo(x - width/2, y); ctx.lineTo(x + width/2, y); ctx.lineTo(x + width/2 + depthX, y - depthY); ctx.lineTo(x - width/2 + depthX, y - depthY); ctx.closePath(); ctx.fill(); ctx.stroke();
-                    // Lateral
                     ctx.beginPath(); ctx.moveTo(x + width/2, y); ctx.lineTo(x + width/2 + depthX, y - depthY); ctx.lineTo(x + width/2 + depthX, base - depthY); ctx.lineTo(x + width/2, base); ctx.closePath(); ctx.fill(); ctx.stroke();
                 });
             });
@@ -513,7 +522,7 @@
         });
     }
 
-    // --- CRUD ATUALIZADO ---
+    // --- CRUD ---
     function adicionarDespesa() {
         const n = document.getElementById('novoNome').value, d = document.getElementById('novoDia').value, v = document.getElementById('novoValor').value, o = document.getElementById('novaObs').value;
         const jaPago = document.getElementById('novoPago').checked;
@@ -524,7 +533,7 @@
         const novaConta = { 
             nome:n, dia:parseInt(d), valor:fmtDinheiro(v), obs:o, 
             pago: jaPago, 
-            recorrente: ehRecorrente, // Salva se é recorrente
+            recorrente: ehRecorrente, 
             tipo:'despesa' 
         };
         if(jaPago) novaConta.data_pagamento = new Date().toLocaleDateString('pt-BR');
@@ -560,7 +569,6 @@
         document.getElementById('editDia').value=c.dia; 
         document.getElementById('editValor').value=c.valor;
         document.getElementById('editObs').value=c.obs||''; 
-        // Carrega status recorrente
         document.getElementById('editRecorrente').checked = c.recorrente || false;
         
         modalEdicaoBS.show();
@@ -572,7 +580,6 @@
         dadosAtuais[i].dia = parseInt(document.getElementById('editDia').value);
         dadosAtuais[i].valor = fmtDinheiro(document.getElementById('editValor').value);
         dadosAtuais[i].obs = document.getElementById('editObs').value;
-        // Salva recorrência editada
         dadosAtuais[i].recorrente = document.getElementById('editRecorrente').checked;
         
         modalEdicaoBS.hide(); renderizarTudo();
